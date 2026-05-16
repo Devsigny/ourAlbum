@@ -12,61 +12,7 @@
   let error = $state('');
   let notFound = $state(false);
 
-  let isInstalled = $state(false);
-  let isIOS = $state(false);
-  let isIOSSafari = $state(false);
-  let isAndroid = $state(false);
-  let deferredPrompt = $state<any>(null);
-  let installChecked = $state(false);
-  let linkCopied = $state(false);
-
   const sessionId = page.params.id;
-
-  function checkInstallState() {
-    const standalone = window.matchMedia('(display-mode: standalone)').matches
-      || (navigator as any).standalone === true;
-    isInstalled = standalone;
-
-    const ua = navigator.userAgent.toLowerCase();
-    isIOS = /iphone|ipad|ipod/.test(ua) && !(window as any).MSStream;
-    isAndroid = /android/.test(ua);
-
-    if (isIOS) {
-      const isSafari = /safari/.test(ua) && !/crios|fxios|opios|edgios/.test(ua);
-      isIOSSafari = isSafari;
-    }
-
-    window.addEventListener('beforeinstallprompt', (e: Event) => {
-      e.preventDefault();
-      deferredPrompt = e;
-    });
-
-    window.matchMedia('(display-mode: standalone)').addEventListener('change', (e) => {
-      if (e.matches) isInstalled = true;
-    });
-
-    installChecked = true;
-  }
-
-  async function installAndroid() {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const result = await deferredPrompt.userChoice;
-    if (result.outcome === 'accepted') {
-      isInstalled = true;
-    }
-    deferredPrompt = null;
-  }
-
-  function copyLink() {
-    navigator.clipboard.writeText(window.location.href);
-    linkCopied = true;
-    setTimeout(() => linkCopied = false, 2000);
-  }
-
-  function skipInstall() {
-    isInstalled = true;
-  }
 
   async function loadSession() {
     const stored = localStorage.getItem(`guest_${sessionId}`);
@@ -125,7 +71,6 @@
   }
 
   if (browser) {
-    checkInstallState();
     loadSession();
   }
 </script>
@@ -191,27 +136,6 @@
           <div class="deco-line"></div>
         </div>
 
-        {#if installChecked && !isInstalled}
-          <div class="install-hint">
-            {#if deferredPrompt}
-              <button class="install-banner" onclick={installAndroid}>
-                <span class="install-icon">&#10022;</span>
-                <span class="install-text">
-                  <strong>Add to Home Screen</strong>
-                  <small>For the best experience</small>
-                </span>
-              </button>
-            {:else if isIOS && isIOSSafari}
-              <div class="install-banner-static">
-                <span class="install-icon">&#10022;</span>
-                <span class="install-text">
-                  <strong>Add to Home Screen</strong>
-                  <small>Tap <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align: -2px;"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> then "Add to Home Screen"</small>
-                </span>
-              </div>
-            {/if}
-          </div>
-        {/if}
       </div>
     {/if}
   </div>
@@ -372,53 +296,4 @@
     to { transform: rotate(360deg); }
   }
 
-  /* Install suggestion banner */
-  .install-hint {
-    margin-top: 24px;
-  }
-
-  .install-banner,
-  .install-banner-static {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    width: 100%;
-    padding: 14px 16px;
-    background: var(--accent-dim);
-    border: 1px solid var(--border-gold);
-    border-radius: var(--radius);
-    color: var(--text);
-    text-align: left;
-    transition: all 0.2s;
-  }
-
-  .install-banner:active {
-    background: rgba(201, 168, 76, 0.25);
-    border-color: var(--accent);
-  }
-
-  .install-icon {
-    color: var(--accent);
-    font-size: 22px;
-    flex-shrink: 0;
-  }
-
-  .install-text {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .install-text strong {
-    font-family: var(--font-display);
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--accent);
-    letter-spacing: 0.5px;
-  }
-
-  .install-text small {
-    font-size: 13px;
-    color: var(--text-muted);
-  }
 </style>
