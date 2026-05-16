@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { goto } from '$app/navigation';
+  import { browser } from '$app/environment';
   import { supabase } from '$lib/supabase';
   import type { Session } from '$lib/types';
   import type { User } from '@supabase/supabase-js';
@@ -19,9 +21,23 @@
   let qrDataUrl = $state('');
   let selectedSession = $state<Session | null>(null);
 
+  function tryGuestRedirect(): boolean {
+    if (!browser) return false;
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith('guest_')) {
+        const sessionId = key.replace('guest_', '');
+        goto(`/session/${sessionId}`);
+        return true;
+      }
+    }
+    return false;
+  }
+
   async function checkAuth() {
     const { data } = await supabase.auth.getSession();
     user = data.session?.user ?? null;
+    if (!user && tryGuestRedirect()) return;
     authLoading = false;
     if (user) loadSessions();
   }
