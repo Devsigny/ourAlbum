@@ -3,6 +3,7 @@
   import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
   import { onDestroy } from 'svelte';
+  import { PUBLIC_SUPABASE_URL } from '$env/static/public';
   import { supabase } from '$lib/supabase';
   import { compressImage } from '$lib/image';
   import type { Session, Guest, Photo } from '$lib/types';
@@ -24,6 +25,22 @@
 
   function getPhotoUrl(path: string) {
     return supabase.storage.from('photos').getPublicUrl(path).data.publicUrl;
+  }
+
+  function getThumbUrl(path: string) {
+    return `${PUBLIC_SUPABASE_URL}/storage/v1/render/image/public/photos/${path}?width=400&quality=70`;
+  }
+
+  let lightboxLoaded = $state(false);
+
+  function preloadImage(path: string) {
+    const img = new Image();
+    img.src = getPhotoUrl(path);
+  }
+
+  function preloadAdjacent() {
+    if (lightboxIdx > 0) preloadImage(photos[lightboxIdx - 1].storage_path);
+    if (lightboxIdx < photos.length - 1) preloadImage(photos[lightboxIdx + 1].storage_path);
   }
 
   async function tryAutoJoinAdmin(): Promise<boolean> {
@@ -210,9 +227,11 @@
   function openLightbox(photo: Photo, idx: number) {
     lightboxPhoto = photo;
     lightboxIdx = idx;
+    lightboxLoaded = false;
     touchDeltaX = 0;
     slideDir = null;
     requestAnimationFrame(() => lightboxEl?.focus());
+    preloadAdjacent();
   }
 
   function closeLightbox() {
@@ -227,8 +246,10 @@
       slideDir = dir === 1 ? 'left' : 'right';
       lightboxIdx = newIdx;
       lightboxPhoto = photos[newIdx];
+      lightboxLoaded = false;
       touchDeltaX = 0;
       setTimeout(() => { slideDir = null; }, 300);
+      preloadAdjacent();
     }
   }
 
@@ -378,7 +399,16 @@
       class:slide-right={slideDir === 'right'}
       style="transform: translateX({touchDeltaX}px); {swiping ? '' : touchDeltaX === 0 ? '' : 'transition: transform 0.25s ease;'}"
     >
-      <img src={getPhotoUrl(lightboxPhoto.storage_path)} alt="" draggable="false" />
+      {#if !lightboxLoaded}
+        <div class="lb-spinner"></div>
+      {/if}
+      <img
+        src={getPhotoUrl(lightboxPhoto.storage_path)}
+        alt=""
+        draggable="false"
+        class:lb-img-loaded={lightboxLoaded}
+        onload={() => { lightboxLoaded = true; }}
+      />
     </div>
 
     <div class="lb-counter">{lightboxIdx + 1} / {photos.length}</div>
@@ -661,7 +691,7 @@
 
   .photo-item {
     position: relative;
-    aspect-ratio: 1;
+    aspect-ratio: 3 / 4;
     overflow: hidden;
     border-radius: 2px;
     background: var(--bg-card);
@@ -752,6 +782,22 @@
     border-radius: 2px;
     border: 1px solid var(--border-gold);
     pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .lb-track img.lb-img-loaded {
+    opacity: 1;
+  }
+
+  .lb-spinner {
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    border: 2px solid var(--border-gold);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
   }
 
   .lb-counter {
