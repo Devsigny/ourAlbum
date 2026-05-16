@@ -2,13 +2,51 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+
+		<!-- PWA Meta -->
 		<meta name="theme-color" content="#0a0a0a" />
+		<meta name="color-scheme" content="dark" />
+		<meta name="application-name" content="ourAlbum" />
+		<meta name="description" content="Capture your day through everyone's eyes" />
+		<meta name="mobile-web-app-capable" content="yes" />
+
+		<!-- iOS / Safari -->
 		<meta name="apple-mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+		<meta name="apple-mobile-web-app-title" content="ourAlbum" />
+		<meta name="format-detection" content="telephone=no" />
+
+		<!-- Manifest -->
 		<link rel="manifest" href="/manifest.json" />
+
+		<!-- Favicons -->
+		<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+		<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
 		<link rel="icon" type="image/png" href="/favicon.png" />
-		<link rel="apple-touch-icon" href="/icon-192.png" />
+
+		<!-- Apple Touch Icons -->
+		<link rel="apple-touch-icon" href="/icon-180.png" />
+		<link rel="apple-touch-icon" sizes="152x152" href="/icon-152.png" />
+		<link rel="apple-touch-icon" sizes="167x167" href="/icon-167.png" />
+		<link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png" />
+
+		<!-- Apple Splash Screens -->
+		<!-- iPhone 13/14/15 Pro (1170x2532) -->
+		<link rel="apple-touch-startup-image" href="/splash-1170x2532.png" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)" />
+		<!-- iPhone 14/15 Pro Max (1284x2778) -->
+		<link rel="apple-touch-startup-image" href="/splash-1284x2778.png" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)" />
+		<!-- iPhone SE / 8 (750x1334) -->
+		<link rel="apple-touch-startup-image" href="/splash-750x1334.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)" />
+		<!-- iPhone X / XS / 11 Pro (1125x2436) -->
+		<link rel="apple-touch-startup-image" href="/splash-1125x2436.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" />
+
+		<!-- Open Graph -->
+		<meta property="og:type" content="website" />
+		<meta property="og:title" content="ourAlbum" />
+		<meta property="og:description" content="Capture your day through everyone's eyes" />
+		<meta property="og:image" content="/icon-512.png" />
+
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">
