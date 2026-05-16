@@ -120,6 +120,7 @@
               placeholder="Your name, darling"
               bind:value={guestName}
               autocomplete="name"
+              autocapitalize="words"
             />
             {#if error}
               <p class="error">{error}</p>

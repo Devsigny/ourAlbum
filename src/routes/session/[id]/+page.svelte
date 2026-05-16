@@ -13,11 +13,12 @@
   let guests = $state<Guest[]>([]);
   let uploading = $state(false);
   let uploadCount = $state(0);
+  let uploadError = $state('');
   let cameraInput = $state<HTMLInputElement | null>(null);
   let galleryInput = $state<HTMLInputElement | null>(null);
   let lightboxPhoto = $state<Photo | null>(null);
   let lightboxIdx = $state(-1);
-  let lastCameraUploadDone = $state(false);
+  let knownPhotoIds = new Set<string>();
 
   const sessionId = page.params.id;
 
@@ -66,8 +67,20 @@
     const stored = localStorage.getItem(`guest_${sessionId}`);
     if (stored) {
       try {
-        guest = JSON.parse(stored);
-      } catch {}
+        const parsed = JSON.parse(stored) as Guest;
+        const { data } = await supabase
+          .from('guests')
+          .select('*')
+          .eq('id', parsed.id)
+          .single();
+        if (data) {
+          guest = data;
+        } else {
+          localStorage.removeItem(`guest_${sessionId}`);
+        }
+      } catch {
+        localStorage.removeItem(`guest_${sessionId}`);
+      }
     }
 
     if (!guest) {
@@ -86,6 +99,7 @@
 
     session = sessionRes.data;
     photos = photosRes.data ?? [];
+    for (const p of photos) knownPhotoIds.add(p.id);
     guests = guestsRes.data ?? [];
   }
 
@@ -101,7 +115,8 @@
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'photos', filter: `session_id=eq.${sessionId}` },
         async (payload) => {
           const newId = (payload.new as any).id;
-          if (photos.some(p => p.id === newId)) return;
+          if (knownPhotoIds.has(newId)) return;
+          knownPhotoIds.add(newId);
           const { data } = await supabase
             .from('photos')
             .select('*, guest:guests(name)')
@@ -127,9 +142,10 @@
       });
   }
 
-  async function uploadPhoto(file: File, fromCamera = false) {
+  async function uploadPhoto(file: File) {
     if (!guest) return;
     uploading = true;
+    uploadError = '';
     uploadCount++;
 
     try {
@@ -148,11 +164,14 @@
         storage_path: path
       }).select('*, guest:guests(name)').single();
 
-      if (newPhoto && !photos.some(p => p.id === newPhoto.id)) {
+      if (newPhoto && !knownPhotoIds.has(newPhoto.id)) {
+        knownPhotoIds.add(newPhoto.id);
         photos = [newPhoto, ...photos];
       }
     } catch (e) {
       console.error('Upload failed:', e);
+      uploadError = 'Upload failed — please try again';
+      setTimeout(() => { uploadError = ''; }, 4000);
     }
 
     uploadCount--;
@@ -160,22 +179,14 @@
       uploading = false;
       uploadCount = 0;
     }
-
-    if (fromCamera) {
-      lastCameraUploadDone = true;
-      setTimeout(() => {
-        lastCameraUploadDone = false;
-        cameraInput?.click();
-      }, 300);
-    }
   }
 
-  function handleFileSelect(e: Event, fromCamera = false) {
+  function handleFileSelect(e: Event) {
     const input = e.target as HTMLInputElement;
     const files = input.files;
     if (!files || files.length === 0) return;
     for (const file of files) {
-      uploadPhoto(file, fromCamera && files.length === 1);
+      uploadPhoto(file);
     }
     input.value = '';
   }
@@ -216,8 +227,14 @@
       .select('*, guest:guests(name)')
       .eq('session_id', sessionId)
       .order('created_at', { ascending: false });
-    if (data && data.length !== photos.length) {
+    if (!data) return;
+    const serverIds = new Set(data.map(p => p.id));
+    const localIds = new Set(photos.map(p => p.id));
+    const hasNew = data.some(p => !localIds.has(p.id));
+    const hasRemoved = photos.some(p => !serverIds.has(p.id));
+    if (hasNew || hasRemoved) {
       photos = data;
+      knownPhotoIds = new Set(data.map(p => p.id));
     }
   }
 
@@ -249,8 +266,8 @@
   bind:this={cameraInput}
   type="file"
   accept="image/*"
-  capture="environment"
-  onchange={(e) => handleFileSelect(e, true)}
+  capture="user"
+  onchange={handleFileSelect}
   hidden
 />
 <input
@@ -258,7 +275,7 @@
   type="file"
   accept="image/*"
   multiple
-  onchange={(e) => handleFileSelect(e, false)}
+  onchange={handleFileSelect}
   hidden
 />
 
@@ -325,6 +342,12 @@
           <div class="upload-progress"></div>
         </div>
         <p class="upload-hint">{uploadCount} uploading...</p>
+      </div>
+    {/if}
+
+    {#if uploadError}
+      <div class="container">
+        <p class="upload-error">{uploadError}</p>
       </div>
     {/if}
   {/if}
@@ -486,6 +509,14 @@
     color: var(--text-muted);
     font-style: italic;
     margin-top: 2px;
+    margin-bottom: 8px;
+  }
+
+  .upload-error {
+    text-align: center;
+    font-size: 14px;
+    color: #e57373;
+    padding: 8px;
     margin-bottom: 8px;
   }
 
