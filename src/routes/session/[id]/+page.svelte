@@ -510,26 +510,11 @@
     height: 100dvh;
     display: flex;
     flex-direction: column;
-    background:
-      radial-gradient(ellipse at 50% 0%, rgba(201, 168, 76, 0.06) 0%, transparent 50%),
-      var(--bg);
+    background: var(--bg);
   }
 
   .sticky-top {
     flex-shrink: 0;
-    position: relative;
-  }
-
-  .sticky-top::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 20px;
-    background: linear-gradient(to bottom, var(--bg), transparent);
-    pointer-events: none;
-    z-index: 2;
   }
 
   header {
@@ -638,7 +623,7 @@
   }
 
   .gallery {
-    padding-top: 3px;
+    padding-top: 0;
   }
 
   .empty-gallery {
