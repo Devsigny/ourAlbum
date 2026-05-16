@@ -2,6 +2,7 @@
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
+  import { onDestroy } from 'svelte';
   import { supabase } from '$lib/supabase';
   import { compressImage } from '$lib/image';
   import type { Session, Guest, Photo } from '$lib/types';
@@ -88,15 +89,23 @@
     guests = guestsRes.data ?? [];
   }
 
+  let realtimeChannel: ReturnType<typeof supabase.channel> | null = null;
+
   function subscribeRealtime() {
-    supabase
-      .channel(`photos_${sessionId}`)
+    if (realtimeChannel) {
+      supabase.removeChannel(realtimeChannel);
+    }
+
+    realtimeChannel = supabase
+      .channel(`photos_${sessionId}_${Date.now()}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'photos', filter: `session_id=eq.${sessionId}` },
         async (payload) => {
+          const newId = (payload.new as any).id;
+          if (photos.some(p => p.id === newId)) return;
           const { data } = await supabase
             .from('photos')
             .select('*, guest:guests(name)')
-            .eq('id', payload.new.id)
+            .eq('id', newId)
             .single();
           if (data && !photos.some(p => p.id === data.id)) {
             photos = [data, ...photos];
@@ -111,7 +120,11 @@
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'CHANNEL_ERROR') {
+          setTimeout(() => subscribeRealtime(), 3000);
+        }
+      });
   }
 
   async function uploadPhoto(file: File, fromCamera = false) {
@@ -194,10 +207,35 @@
     if (e.key === 'ArrowRight') lightboxNav(1);
   }
 
-  if (browser) {
-    loadData();
-    subscribeRealtime();
+  let pollInterval: ReturnType<typeof setInterval> | null = null;
+
+  async function pollPhotos() {
+    if (!session) return;
+    const { data } = await supabase
+      .from('photos')
+      .select('*, guest:guests(name)')
+      .eq('session_id', sessionId)
+      .order('created_at', { ascending: false });
+    if (data && data.length !== photos.length) {
+      photos = data;
+    }
   }
+
+  if (browser) {
+    loadData().then(() => {
+      subscribeRealtime();
+      pollInterval = setInterval(pollPhotos, 10000);
+    });
+  }
+
+  onDestroy(() => {
+    if (realtimeChannel) {
+      supabase.removeChannel(realtimeChannel);
+    }
+    if (pollInterval) {
+      clearInterval(pollInterval);
+    }
+  });
 </script>
 
 <svelte:head>
