@@ -1,6 +1,7 @@
 <script lang="ts">
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
+  import { browser } from '$app/environment';
   import { supabase } from '$lib/supabase';
   import type { Session, Guest } from '$lib/types';
 
@@ -123,8 +124,10 @@
     }
   }
 
-  checkInstallState();
-  loadSession();
+  if (browser) {
+    checkInstallState();
+    loadSession();
+  }
 </script>
 
 <div class="join-page">

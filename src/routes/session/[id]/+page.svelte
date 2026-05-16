@@ -1,6 +1,7 @@
 <script lang="ts">
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
+  import { browser } from '$app/environment';
   import { supabase } from '$lib/supabase';
   import { compressImage } from '$lib/image';
   import type { Session, Guest, Photo } from '$lib/types';
@@ -193,8 +194,10 @@
     if (e.key === 'ArrowRight') lightboxNav(1);
   }
 
-  loadData();
-  subscribeRealtime();
+  if (browser) {
+    loadData();
+    subscribeRealtime();
+  }
 </script>
 
 <svelte:head>
