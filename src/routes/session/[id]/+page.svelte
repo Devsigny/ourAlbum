@@ -199,9 +199,22 @@
     galleryInput?.click();
   }
 
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let touchDeltaX = $state(0);
+  let swiping = $state(false);
+  let lightboxEl = $state<HTMLDivElement | null>(null);
+
   function openLightbox(photo: Photo, idx: number) {
     lightboxPhoto = photo;
     lightboxIdx = idx;
+    touchDeltaX = 0;
+    requestAnimationFrame(() => lightboxEl?.focus());
+  }
+
+  function closeLightbox() {
+    lightboxPhoto = null;
+    touchDeltaX = 0;
   }
 
   function lightboxNav(dir: -1 | 1) {
@@ -209,13 +222,48 @@
     if (newIdx >= 0 && newIdx < photos.length) {
       lightboxIdx = newIdx;
       lightboxPhoto = photos[newIdx];
+      touchDeltaX = 0;
     }
   }
 
   function handleLightboxKey(e: KeyboardEvent) {
-    if (e.key === 'Escape') lightboxPhoto = null;
+    if (e.key === 'Escape') closeLightbox();
     if (e.key === 'ArrowLeft') lightboxNav(-1);
     if (e.key === 'ArrowRight') lightboxNav(1);
+  }
+
+  function handleTouchStart(e: TouchEvent) {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    swiping = true;
+    touchDeltaX = 0;
+  }
+
+  function handleTouchMove(e: TouchEvent) {
+    if (!swiping) return;
+    const dx = e.touches[0].clientX - touchStartX;
+    const dy = e.touches[0].clientY - touchStartY;
+    if (Math.abs(dy) > Math.abs(dx) && Math.abs(touchDeltaX) < 10) {
+      swiping = false;
+      touchDeltaX = 0;
+      return;
+    }
+    e.preventDefault();
+    touchDeltaX = dx;
+  }
+
+  function handleTouchEnd() {
+    if (!swiping) return;
+    swiping = false;
+    const threshold = 60;
+    if (touchDeltaX < -threshold && lightboxIdx < photos.length - 1) {
+      lightboxNav(1);
+    } else if (touchDeltaX > threshold && lightboxIdx > 0) {
+      lightboxNav(-1);
+    } else if (Math.abs(touchDeltaX) < 10) {
+      closeLightbox();
+    }
+    touchDeltaX = 0;
   }
 
   let pollInterval: ReturnType<typeof setInterval> | null = null;
@@ -281,19 +329,28 @@
 
 {#if lightboxPhoto}
   <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-  <div class="lightbox" role="dialog" tabindex="0" onkeydown={handleLightboxKey} onclick={() => lightboxPhoto = null}>
-    {#if lightboxIdx > 0}
-      <button class="lb-nav lb-prev" onclick={(e) => { e.stopPropagation(); lightboxNav(-1); }} aria-label="Previous">&lsaquo;</button>
-    {/if}
-    <img src={getPhotoUrl(lightboxPhoto.storage_path)} alt="" onclick={(e) => e.stopPropagation()} />
-    {#if lightboxIdx < photos.length - 1}
-      <button class="lb-nav lb-next" onclick={(e) => { e.stopPropagation(); lightboxNav(1); }} aria-label="Next">&rsaquo;</button>
-    {/if}
-    <div class="lightbox-info" onclick={(e) => e.stopPropagation()}>
+  <div
+    class="lightbox"
+    role="dialog"
+    tabindex="0"
+    bind:this={lightboxEl}
+    onkeydown={handleLightboxKey}
+    ontouchstart={handleTouchStart}
+    ontouchmove={handleTouchMove}
+    ontouchend={handleTouchEnd}
+  >
+    <div class="lb-track" style="transform: translateX({touchDeltaX}px); transition: {swiping ? 'none' : 'transform 0.25s ease'}">
+      <img src={getPhotoUrl(lightboxPhoto.storage_path)} alt="" draggable="false" />
+    </div>
+
+    <div class="lb-counter">{lightboxIdx + 1} / {photos.length}</div>
+
+    <div class="lightbox-info">
       <span class="lb-name">{lightboxPhoto.guest?.name ?? 'Unknown'}</span>
       <span class="lb-time">{new Date(lightboxPhoto.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
     </div>
-    <button class="lb-close" onclick={(e) => { e.stopPropagation(); lightboxPhoto = null; }} aria-label="Close">&#10005;</button>
+
+    <button class="lb-close" onclick={closeLightbox} aria-label="Close">&#10005;</button>
   </div>
 {/if}
 
@@ -608,25 +665,48 @@
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    cursor: pointer;
     outline: none;
+    touch-action: pan-y;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
   }
 
-  .lightbox img {
+  .lb-track {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    will-change: transform;
+  }
+
+  .lb-track img {
     max-width: 92vw;
-    max-height: 80vh;
+    max-height: 75vh;
     object-fit: contain;
     border-radius: 2px;
-    cursor: default;
     border: 1px solid var(--border-gold);
+    pointer-events: none;
+  }
+
+  .lb-counter {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 13px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    font-family: var(--font-body);
   }
 
   .lightbox-info {
+    position: absolute;
+    bottom: 32px;
     display: flex;
     gap: 12px;
-    margin-top: 14px;
     font-size: 15px;
-    cursor: default;
   }
 
   .lb-name {
@@ -639,42 +719,16 @@
     color: var(--text-muted);
   }
 
-  .lb-nav {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    background: rgba(201, 168, 76, 0.1);
-    border: 1px solid rgba(201, 168, 76, 0.2);
-    color: var(--accent);
-    font-size: 36px;
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-  }
-
-  .lb-nav:hover {
-    background: rgba(201, 168, 76, 0.2);
-    border-color: var(--accent);
-  }
-
-  .lb-prev { left: 12px; }
-  .lb-next { right: 12px; }
-
   .lb-close {
     position: absolute;
-    top: 16px;
-    right: 16px;
-    background: rgba(201, 168, 76, 0.1);
-    border: 1px solid rgba(201, 168, 76, 0.2);
+    top: 12px;
+    right: 12px;
+    background: rgba(201, 168, 76, 0.15);
+    border: 1px solid rgba(201, 168, 76, 0.3);
     color: var(--accent);
     font-size: 20px;
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     cursor: pointer;
     display: flex;
