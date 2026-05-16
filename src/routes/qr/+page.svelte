@@ -69,48 +69,25 @@
 </div>
 
 <style>
-  @media print {
-    :global(body) { background: #ffffff !important; }
-
-    .print-page { background: #ffffff; }
-    .border-outer { border-color: #c9a84c; }
-    .border-inner { border-color: rgba(201, 168, 76, 0.5); padding: 32px 28px; }
-
-    .corner::before, .corner::after { background: #c9a84c; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .deco-line { background: linear-gradient(90deg, transparent, #c9a84c, transparent) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .deco-diamond { background: #c9a84c !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .deco-star { background: #ffffff; color: #c9a84c; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .deco-divider::before { background: linear-gradient(90deg, transparent, rgba(201, 168, 76, 0.4), transparent) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-
-    .prelude { color: #666; }
-    h1 { color: #b8942e; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .subtitle { color: #666; }
-    .scan-text { color: #222; }
-    .url { color: #999; }
-    .tagline { color: #666; }
-
-    .qr-frame { border-color: #c9a84c; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  }
-
   .print-page {
     min-height: 100dvh;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 20px;
-    background: #1a1a1a;
+    background: #ffffff;
   }
 
   .border-outer {
     width: 100%;
     max-width: 480px;
-    border: 2px solid rgba(201, 168, 76, 0.4);
+    border: 2px solid #c9a84c;
     border-radius: 4px;
     padding: 12px;
   }
 
   .border-inner {
-    border: 1px solid rgba(201, 168, 76, 0.25);
+    border: 1px solid rgba(201, 168, 76, 0.5);
     border-radius: 2px;
     padding: 40px 32px;
     position: relative;
@@ -125,7 +102,7 @@
   .corner::before, .corner::after {
     content: '';
     position: absolute;
-    background: #c9a84c;
+    background: #c9a84c; -webkit-print-color-adjust: exact; print-color-adjust: exact;
   }
 
   .tl { top: -2px; left: -2px; }
@@ -169,7 +146,7 @@
   .deco-diamond {
     width: 8px;
     height: 8px;
-    background: #c9a84c;
+    background: #c9a84c; -webkit-print-color-adjust: exact; print-color-adjust: exact;
     transform: rotate(45deg);
   }
 
@@ -178,7 +155,7 @@
     font-size: 14px;
     letter-spacing: 3px;
     text-transform: uppercase;
-    color: #998e7e;
+    color: #888;
     margin-bottom: 8px;
   }
 
@@ -186,7 +163,7 @@
     font-family: var(--font-display, 'Playfair Display', Georgia, serif);
     font-size: 52px;
     font-weight: 800;
-    color: #c9a84c;
+    color: #b8942e;
     letter-spacing: 2px;
     margin-bottom: 4px;
   }
@@ -195,7 +172,7 @@
     font-family: var(--font-body, 'Cormorant Garamond', Georgia, serif);
     font-size: 20px;
     font-style: italic;
-    color: #998e7e;
+    color: #888;
     letter-spacing: 1px;
   }
 
@@ -211,14 +188,14 @@
     right: 15%;
     top: 50%;
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(201, 168, 76, 0.3), transparent);
+    background: linear-gradient(90deg, transparent, rgba(201, 168, 76, 0.4), transparent);
   }
 
   .deco-star {
     position: relative;
     color: #c9a84c;
     font-size: 18px;
-    background: #1a1a1a;
+    background: #ffffff;
     padding: 0 16px;
   }
 
@@ -226,7 +203,7 @@
     font-family: var(--font-display, 'Playfair Display', Georgia, serif);
     font-size: 16px;
     font-weight: 600;
-    color: #f5f0e8;
+    color: #222;
     letter-spacing: 2px;
     text-transform: uppercase;
     margin-bottom: 20px;
@@ -248,7 +225,7 @@
 
   .url {
     font-size: 11px;
-    color: #998e7e;
+    color: #999;
     margin-top: 12px;
     letter-spacing: 0.5px;
     word-break: break-all;
@@ -258,6 +235,6 @@
     font-family: var(--font-body, 'Cormorant Garamond', Georgia, serif);
     font-size: 16px;
     font-style: italic;
-    color: #998e7e;
+    color: #888;
   }
 </style>
