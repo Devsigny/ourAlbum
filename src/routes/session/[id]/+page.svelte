@@ -1,5 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state';
+  import { goto } from '$app/navigation';
   import { supabase } from '$lib/supabase';
   import { compressImage } from '$lib/image';
   import type { Session, Guest, Photo } from '$lib/types';
@@ -9,10 +10,12 @@
   let photos = $state<Photo[]>([]);
   let guests = $state<Guest[]>([]);
   let uploading = $state(false);
+  let uploadCount = $state(0);
   let showCamera = $state(false);
   let videoEl = $state<HTMLVideoElement | null>(null);
   let stream = $state<MediaStream | null>(null);
   let lightboxPhoto = $state<Photo | null>(null);
+  let lightboxIdx = $state(-1);
 
   const sessionId = page.params.id;
 
@@ -23,7 +26,14 @@
   async function loadData() {
     const stored = localStorage.getItem(`guest_${sessionId}`);
     if (stored) {
-      guest = JSON.parse(stored);
+      try {
+        guest = JSON.parse(stored);
+      } catch {}
+    }
+
+    if (!guest) {
+      goto(`/join/${sessionId}`);
+      return;
     }
 
     const [sessionRes, photosRes, guestsRes] = await Promise.all([
@@ -47,14 +57,17 @@
             .select('*, guest:guests(name)')
             .eq('id', payload.new.id)
             .single();
-          if (data) {
+          if (data && !photos.some(p => p.id === data.id)) {
             photos = [data, ...photos];
           }
         }
       )
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'guests', filter: `session_id=eq.${sessionId}` },
         (payload) => {
-          guests = [...guests, payload.new as Guest];
+          const g = payload.new as Guest;
+          if (!guests.some(x => x.id === g.id)) {
+            guests = [...guests, g];
+          }
         }
       )
       .subscribe();
@@ -63,11 +76,11 @@
   async function uploadPhoto(file: File) {
     if (!guest) return;
     uploading = true;
+    uploadCount++;
 
     try {
       const compressed = await compressImage(file);
-      const ext = 'jpg';
-      const path = `${sessionId}/${Date.now()}_${guest.id.slice(0, 8)}.${ext}`;
+      const path = `${sessionId}/${Date.now()}_${guest.id.slice(0, 8)}.jpg`;
 
       const { error: uploadErr } = await supabase.storage
         .from('photos')
@@ -83,7 +96,12 @@
     } catch (e) {
       console.error('Upload failed:', e);
     }
-    uploading = false;
+
+    uploadCount--;
+    if (uploadCount <= 0) {
+      uploading = false;
+      uploadCount = 0;
+    }
   }
 
   function handleFileSelect(e: Event) {
@@ -131,29 +149,62 @@
     showCamera = false;
   }
 
+  function openLightbox(photo: Photo, idx: number) {
+    lightboxPhoto = photo;
+    lightboxIdx = idx;
+  }
+
+  function lightboxNav(dir: -1 | 1) {
+    const newIdx = lightboxIdx + dir;
+    if (newIdx >= 0 && newIdx < photos.length) {
+      lightboxIdx = newIdx;
+      lightboxPhoto = photos[newIdx];
+    }
+  }
+
+  function handleLightboxKey(e: KeyboardEvent) {
+    if (e.key === 'Escape') lightboxPhoto = null;
+    if (e.key === 'ArrowLeft') lightboxNav(-1);
+    if (e.key === 'ArrowRight') lightboxNav(1);
+  }
+
   loadData();
   subscribeRealtime();
 </script>
+
+<svelte:head>
+  {#if session}
+    <title>{session.name} - ourAlbum</title>
+  {/if}
+</svelte:head>
 
 {#if showCamera}
   <div class="camera-overlay">
     <!-- svelte-ignore a11y_media_has_caption -->
     <video bind:this={videoEl} autoplay playsinline></video>
     <div class="camera-controls">
-      <button class="cam-btn cancel" onclick={closeCamera}>&#10005;</button>
-      <button class="cam-btn shutter" onclick={capturePhoto}></button>
+      <button class="cam-btn cancel" onclick={closeCamera} aria-label="Close camera">&#10005;</button>
+      <button class="cam-btn shutter" onclick={capturePhoto} aria-label="Take photo"></button>
       <div style="width:56px"></div>
     </div>
   </div>
 {/if}
 
 {#if lightboxPhoto}
-  <div class="lightbox" onclick={() => lightboxPhoto = null} role="dialog" onkeydown={(e) => e.key === 'Escape' && (lightboxPhoto = null)}>
-    <img src={getPhotoUrl(lightboxPhoto.storage_path)} alt="" />
-    <div class="lightbox-info">
-      <span>{lightboxPhoto.guest?.name ?? 'Unknown'}</span>
-      <span>{new Date(lightboxPhoto.created_at).toLocaleTimeString()}</span>
+  <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+  <div class="lightbox" role="dialog" tabindex="0" onkeydown={handleLightboxKey} onclick={() => lightboxPhoto = null}>
+    {#if lightboxIdx > 0}
+      <button class="lb-nav lb-prev" onclick={(e) => { e.stopPropagation(); lightboxNav(-1); }} aria-label="Previous">&lsaquo;</button>
+    {/if}
+    <img src={getPhotoUrl(lightboxPhoto.storage_path)} alt="" onclick={(e) => e.stopPropagation()} />
+    {#if lightboxIdx < photos.length - 1}
+      <button class="lb-nav lb-next" onclick={(e) => { e.stopPropagation(); lightboxNav(1); }} aria-label="Next">&rsaquo;</button>
+    {/if}
+    <div class="lightbox-info" onclick={(e) => e.stopPropagation()}>
+      <span class="lb-name">{lightboxPhoto.guest?.name ?? 'Unknown'}</span>
+      <span class="lb-time">{new Date(lightboxPhoto.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
     </div>
+    <button class="lb-close" onclick={(e) => { e.stopPropagation(); lightboxPhoto = null; }} aria-label="Close">&#10005;</button>
   </div>
 {/if}
 
@@ -167,8 +218,13 @@
           <span class="dot"></span>
           <span>{guests.length} guest{guests.length !== 1 ? 's' : ''}</span>
         </div>
+        {#if guest}
+          <p class="guest-badge">Logged in as <strong>{guest.name}</strong></p>
+        {/if}
       {:else}
-        <h1>Loading...</h1>
+        <div class="loading-header">
+          <div class="loader"></div>
+        </div>
       {/if}
     </div>
   </header>
@@ -193,12 +249,6 @@
         </div>
       </div>
     {/if}
-  {:else}
-    <div class="container">
-      <a href="/join/{sessionId}" class="btn btn-primary" style="width:100%;margin:16px 0;">
-        Join to add photos
-      </a>
-    </div>
   {/if}
 
   <div class="gallery container">
@@ -209,15 +259,15 @@
       </div>
     {:else}
       <div class="photo-grid">
-        {#each photos as photo (photo.id)}
-          <button class="photo-item" onclick={() => lightboxPhoto = photo}>
+        {#each photos as photo, i (photo.id)}
+          <button class="photo-item" onclick={() => openLightbox(photo, i)}>
             <img
               src={getPhotoUrl(photo.storage_path)}
               alt="Photo by {photo.guest?.name ?? 'guest'}"
               loading="lazy"
             />
             <div class="photo-meta">
-              <span>{photo.guest?.name ?? ''}</span>
+              <span class="photo-author">{photo.guest?.name ?? ''}</span>
             </div>
           </button>
         {/each}
@@ -233,7 +283,7 @@
   }
 
   header {
-    padding: 48px 0 16px;
+    padding: 48px 0 12px;
     text-align: center;
   }
 
@@ -259,6 +309,33 @@
     background: var(--text-muted);
   }
 
+  .guest-badge {
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .guest-badge strong {
+    color: var(--accent);
+  }
+
+  .loading-header {
+    padding: 20px 0;
+    display: flex;
+    justify-content: center;
+  }
+
+  .loader {
+    width: 28px;
+    height: 28px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
   .actions {
     display: flex;
     gap: 12px;
@@ -274,7 +351,7 @@
   }
 
   .upload-bar {
-    height: 4px;
+    height: 3px;
     background: var(--border);
     border-radius: 2px;
     overflow: hidden;
@@ -315,15 +392,21 @@
 
   .photo-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 4px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3px;
+  }
+
+  @media (max-width: 400px) {
+    .photo-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
   }
 
   .photo-item {
     position: relative;
     aspect-ratio: 1;
     overflow: hidden;
-    border-radius: var(--radius-sm);
+    border-radius: 4px;
     background: var(--bg-card);
     padding: 0;
     border: none;
@@ -337,8 +420,8 @@
     transition: transform 0.2s;
   }
 
-  .photo-item:hover img {
-    transform: scale(1.05);
+  .photo-item:active img {
+    transform: scale(0.97);
   }
 
   .photo-meta {
@@ -346,10 +429,15 @@
     bottom: 0;
     left: 0;
     right: 0;
-    padding: 24px 8px 8px;
-    background: linear-gradient(transparent, rgba(0,0,0,0.7));
-    font-size: 12px;
-    color: white;
+    padding: 20px 6px 5px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.65));
+  }
+
+  .photo-author {
+    font-size: 10px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.9);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
   }
 
   /* Camera overlay */
@@ -371,8 +459,8 @@
     display: flex;
     align-items: center;
     justify-content: space-around;
-    padding: 24px;
-    background: rgba(0,0,0,0.8);
+    padding: 20px 24px 36px;
+    background: rgba(0,0,0,0.85);
   }
 
   .cam-btn {
@@ -386,18 +474,19 @@
     height: 72px;
     background: white;
     border: 4px solid var(--accent);
+    transition: transform 0.1s;
   }
 
   .shutter:active {
-    transform: scale(0.9);
+    transform: scale(0.88);
   }
 
   .cancel {
-    width: 56px;
-    height: 56px;
-    background: rgba(255,255,255,0.15);
+    width: 48px;
+    height: 48px;
+    background: rgba(255,255,255,0.12);
     color: white;
-    font-size: 24px;
+    font-size: 22px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -408,26 +497,79 @@
     position: fixed;
     inset: 0;
     z-index: 99;
-    background: rgba(0,0,0,0.95);
+    background: rgba(0,0,0,0.97);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-direction: column;
     cursor: pointer;
+    outline: none;
   }
 
   .lightbox img {
-    max-width: 95vw;
-    max-height: 85vh;
+    max-width: 92vw;
+    max-height: 80vh;
     object-fit: contain;
-    border-radius: var(--radius);
+    border-radius: 4px;
+    cursor: default;
   }
 
   .lightbox-info {
     display: flex;
-    gap: 16px;
-    margin-top: 12px;
-    color: var(--text-muted);
+    gap: 12px;
+    margin-top: 14px;
     font-size: 14px;
+    cursor: default;
+  }
+
+  .lb-name {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .lb-time {
+    color: var(--text-muted);
+  }
+
+  .lb-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: white;
+    font-size: 36px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+  }
+
+  .lb-nav:hover {
+    background: rgba(255,255,255,0.2);
+  }
+
+  .lb-prev { left: 12px; }
+  .lb-next { right: 12px; }
+
+  .lb-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: white;
+    font-size: 20px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 </style>

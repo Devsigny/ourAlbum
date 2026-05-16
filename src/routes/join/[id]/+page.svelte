@@ -2,19 +2,37 @@
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import { supabase } from '$lib/supabase';
-  import type { Session } from '$lib/types';
+  import type { Session, Guest } from '$lib/types';
 
   let session = $state<Session | null>(null);
+  let existingGuest = $state<Guest | null>(null);
   let guestName = $state('');
   let joining = $state(false);
   let error = $state('');
   let notFound = $state(false);
 
+  const sessionId = page.params.id;
+
   async function loadSession() {
+    const stored = localStorage.getItem(`guest_${sessionId}`);
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored) as Guest;
+        const { data } = await supabase
+          .from('guests')
+          .select('*')
+          .eq('id', parsed.id)
+          .single();
+        if (data) {
+          existingGuest = data;
+        }
+      } catch {}
+    }
+
     const { data } = await supabase
       .from('sessions')
       .select('*')
-      .eq('id', page.params.id)
+      .eq('id', sessionId)
       .single();
 
     if (!data) {
@@ -22,6 +40,10 @@
       return;
     }
     session = data;
+  }
+
+  function rejoin() {
+    goto(`/session/${sessionId}`);
   }
 
   async function joinSession() {
@@ -69,23 +91,33 @@
         {#if session.description}
           <p class="desc">{session.description}</p>
         {/if}
-        <p class="invite-text">You're invited to capture this moment together</p>
 
-        <form onsubmit={(e) => { e.preventDefault(); joinSession(); }}>
-          <input
-            class="input"
-            type="text"
-            placeholder="Your name"
-            bind:value={guestName}
-            autocomplete="name"
-          />
-          {#if error}
-            <p class="error">{error}</p>
-          {/if}
-          <button class="btn btn-primary" type="submit" disabled={joining || !guestName.trim()}>
-            {joining ? 'Joining...' : 'Join Album'}
+        {#if existingGuest}
+          <p class="welcome-back">Welcome back, <strong>{existingGuest.name}</strong>!</p>
+          <button class="btn btn-primary" onclick={rejoin}>
+            Open Album
           </button>
-        </form>
+          <button class="btn btn-secondary join-new" onclick={() => { existingGuest = null; }}>
+            Join as someone else
+          </button>
+        {:else}
+          <p class="invite-text">You're invited to capture this moment together</p>
+          <form onsubmit={(e) => { e.preventDefault(); joinSession(); }}>
+            <input
+              class="input"
+              type="text"
+              placeholder="Your name"
+              bind:value={guestName}
+              autocomplete="name"
+            />
+            {#if error}
+              <p class="error">{error}</p>
+            {/if}
+            <button class="btn btn-primary" type="submit" disabled={joining || !guestName.trim()}>
+              {joining ? 'Joining...' : 'Join Album'}
+            </button>
+          </form>
+        {/if}
       </div>
     {/if}
   </div>
@@ -138,6 +170,23 @@
     color: var(--text-muted);
     font-size: 14px;
     margin-bottom: 32px;
+  }
+
+  .welcome-back {
+    color: var(--text-muted);
+    font-size: 16px;
+    margin: 24px 0;
+  }
+
+  .welcome-back strong {
+    color: var(--accent);
+  }
+
+  .join-new {
+    margin-top: 12px;
+    width: 100%;
+    font-size: 13px;
+    padding: 10px;
   }
 
   form {
