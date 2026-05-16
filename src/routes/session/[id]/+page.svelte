@@ -6,7 +6,6 @@
   import { PUBLIC_SUPABASE_URL } from '$env/static/public';
   import { supabase } from '$lib/supabase';
   import { compressImage } from '$lib/image';
-  import { PARTY_SESSION_ID } from '$lib/config';
   import QRCode from 'qrcode';
   import type { Session, Guest, Photo } from '$lib/types';
 
@@ -29,8 +28,7 @@
 
   async function openQrModal() {
     if (!qrDataUrl) {
-      const joinUrl = `${window.location.origin}/join/${PARTY_SESSION_ID}`;
-      qrDataUrl = await QRCode.toDataURL(joinUrl, {
+      qrDataUrl = await QRCode.toDataURL(window.location.origin, {
         width: 500,
         margin: 2,
         color: { dark: '#000000', light: '#ffffff' },

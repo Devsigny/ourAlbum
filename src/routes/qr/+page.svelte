@@ -1,13 +1,12 @@
 <script lang="ts">
   import { browser } from '$app/environment';
-  import { PARTY_SESSION_ID } from '$lib/config';
   import QRCode from 'qrcode';
 
   let qrDataUrl = $state('');
   let joinUrl = $state('');
 
   async function generate() {
-    joinUrl = `${window.location.origin}/join/${PARTY_SESSION_ID}`;
+    joinUrl = window.location.origin;
     qrDataUrl = await QRCode.toDataURL(joinUrl, {
       width: 600,
       margin: 3,
@@ -34,7 +33,7 @@
           <div class="deco-line"></div>
         </div>
 
-        <p class="prelude">You are invited to</p>
+        <p class="prelude">Welcome to</p>
         <h1>Val & Isa</h1>
         <p class="subtitle">A Great Gatsby Night</p>
 
@@ -50,7 +49,7 @@
           </div>
         {/if}
 
-        <p class="url">{joinUrl}</p>
+        <p class="url">partyalbum.devsigny.com</p>
 
         <div class="deco-divider">
           <span class="deco-star">&#10022;</span>
@@ -224,11 +223,12 @@
   }
 
   .url {
-    font-size: 11px;
-    color: #999;
-    margin-top: 12px;
-    letter-spacing: 0.5px;
-    word-break: break-all;
+    font-size: 13px;
+    color: #666;
+    margin-top: 14px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 500;
   }
 
   .tagline {
