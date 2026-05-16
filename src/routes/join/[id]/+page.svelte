@@ -13,9 +13,9 @@
 
   let isInstalled = $state(false);
   let isIOS = $state(false);
+  let isIOSSafari = $state(false);
   let isAndroid = $state(false);
   let deferredPrompt = $state<any>(null);
-  let showIOSGuide = $state(false);
   let installChecked = $state(false);
 
   const sessionId = page.params.id;
@@ -28,6 +28,11 @@
     const ua = navigator.userAgent.toLowerCase();
     isIOS = /iphone|ipad|ipod/.test(ua) && !(window as any).MSStream;
     isAndroid = /android/.test(ua);
+
+    if (isIOS) {
+      const isSafari = /safari/.test(ua) && !/crios|fxios|opios|edgios/.test(ua);
+      isIOSSafari = isSafari;
+    }
 
     window.addEventListener('beforeinstallprompt', (e: Event) => {
       e.preventDefault();
@@ -49,6 +54,10 @@
       isInstalled = true;
     }
     deferredPrompt = null;
+  }
+
+  function copyLink() {
+    navigator.clipboard.writeText(window.location.href);
   }
 
   function skipInstall() {
@@ -127,61 +136,101 @@
 
         <p class="prelude">Before entering</p>
         <h1>Install the App</h1>
-        <p class="install-subtitle">For the best experience tonight</p>
+        <p class="install-subtitle">For the full Gatsby experience</p>
 
         <div class="deco-divider">
           <span class="deco-star">&#10022;</span>
         </div>
 
-        {#if isIOS}
-          {#if !showIOSGuide}
-            <button class="btn btn-primary" onclick={() => showIOSGuide = true}>
-              How to Install
+        {#if isIOS && !isIOSSafari}
+          <!-- iOS but NOT Safari - can't install from here -->
+          <div class="safari-warning">
+            <div class="warning-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16.24 7.76l-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z"/></svg>
+            </div>
+            <p class="warning-title">Open in Safari</p>
+            <p class="warning-text">Only Safari can install apps on iPhone</p>
+            <button class="btn btn-primary" onclick={copyLink}>
+              Copy Link
             </button>
-          {/if}
-          {#if showIOSGuide}
-            <div class="ios-guide">
-              <div class="ios-step">
-                <span class="step-num">1</span>
-                <p>Tap the <strong>Share</strong> button <span class="share-icon">&#xFEFF;<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></span> at the bottom of Safari</p>
-              </div>
-              <div class="ios-step">
-                <span class="step-num">2</span>
-                <p>Scroll down and tap <strong>Add to Home Screen</strong></p>
-              </div>
-              <div class="ios-step">
-                <span class="step-num">3</span>
-                <p>Tap <strong>Add</strong> in the top right</p>
-              </div>
-              <div class="ios-step">
-                <span class="step-num">4</span>
-                <p>Open the app from your home screen</p>
+            <p class="warning-hint">Then paste it in Safari</p>
+          </div>
+
+        {:else if isIOS && isIOSSafari}
+          <!-- iOS Safari - show visual guide -->
+          <div class="ios-visual-guide">
+            <p class="guide-intro">Tap the share button below</p>
+
+            <div class="share-arrow-container">
+              <div class="share-arrow">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
               </div>
             </div>
-          {/if}
+
+            <div class="share-button-visual">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+            </div>
+
+            <div class="guide-steps">
+              <div class="guide-step">
+                <div class="step-badge">1</div>
+                <div class="step-content">
+                  <p>Tap <span class="share-icon-inline"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></span> in the toolbar below</p>
+                </div>
+              </div>
+              <div class="step-connector"></div>
+              <div class="guide-step">
+                <div class="step-badge">2</div>
+                <div class="step-content">
+                  <p>Scroll down, tap <strong>Add to Home Screen</strong></p>
+                </div>
+              </div>
+              <div class="step-connector"></div>
+              <div class="guide-step">
+                <div class="step-badge">3</div>
+                <div class="step-content">
+                  <p>Tap <strong>Add</strong> &mdash; then open from home</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
         {:else if deferredPrompt}
+          <!-- Android with install prompt -->
           <button class="btn btn-primary" onclick={installAndroid}>
             Install App
           </button>
+
         {:else}
-          <div class="ios-guide">
-            <div class="ios-step">
-              <span class="step-num">1</span>
-              <p>Open your browser menu <strong>(three dots)</strong></p>
-            </div>
-            <div class="ios-step">
-              <span class="step-num">2</span>
-              <p>Tap <strong>Install app</strong> or <strong>Add to Home Screen</strong></p>
-            </div>
-            <div class="ios-step">
-              <span class="step-num">3</span>
-              <p>Open it from your home screen</p>
+          <!-- Android/other fallback -->
+          <div class="ios-visual-guide">
+            <div class="guide-steps">
+              <div class="guide-step">
+                <div class="step-badge">1</div>
+                <div class="step-content">
+                  <p>Tap <strong>&#8942;</strong> menu in your browser</p>
+                </div>
+              </div>
+              <div class="step-connector"></div>
+              <div class="guide-step">
+                <div class="step-badge">2</div>
+                <div class="step-content">
+                  <p>Tap <strong>Install app</strong> or <strong>Add to Home Screen</strong></p>
+                </div>
+              </div>
+              <div class="step-connector"></div>
+              <div class="guide-step">
+                <div class="step-badge">3</div>
+                <div class="step-content">
+                  <p>Open from your home screen</p>
+                </div>
+              </div>
             </div>
           </div>
         {/if}
 
         <button class="btn-skip" onclick={skipInstall}>
-          Continue without installing
+          Continue in browser
         </button>
 
         <div class="deco-bottom">
@@ -430,57 +479,142 @@
     color: var(--text-muted);
   }
 
-  .ios-guide {
+  /* Safari warning (non-Safari iOS) */
+  .safari-warning {
+    text-align: center;
+    margin: 8px 0;
+  }
+
+  .warning-icon {
+    margin-bottom: 16px;
+  }
+
+  .warning-title {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .warning-text {
+    font-size: 15px;
+    color: var(--text-muted);
+    font-style: italic;
+    margin-bottom: 24px;
+  }
+
+  .warning-hint {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 12px;
+    font-style: italic;
+  }
+
+  /* iOS Safari visual guide */
+  .ios-visual-guide {
+    margin: 8px 0;
+  }
+
+  .guide-intro {
+    font-family: var(--font-body);
+    font-size: 18px;
+    color: var(--text);
+    font-style: italic;
+    margin-bottom: 16px;
+  }
+
+  .share-arrow-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 8px;
+  }
+
+  .share-arrow {
+    animation: bounce-down 1.2s ease-in-out infinite;
+  }
+
+  @keyframes bounce-down {
+    0%, 100% { transform: translateY(0); opacity: 1; }
+    50% { transform: translateY(12px); opacity: 0.6; }
+  }
+
+  .share-button-visual {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 2px solid var(--accent);
+    border-radius: 10px;
+    margin-bottom: 28px;
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 8px rgba(201, 168, 76, 0.2); }
+    50% { box-shadow: 0 0 24px rgba(201, 168, 76, 0.5); }
+  }
+
+  .guide-steps {
     text-align: left;
-    margin: 24px 0;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    align-items: stretch;
   }
 
-  .ios-step {
+  .guide-step {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 14px;
+    padding: 12px 0;
   }
 
-  .step-num {
+  .step-badge {
     flex-shrink: 0;
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
+    background: var(--accent-dim);
     border: 1px solid var(--border-gold);
     color: var(--accent);
     font-family: var(--font-display);
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 700;
     border-radius: 50%;
   }
 
-  .ios-step p {
+  .step-content p {
     font-size: 16px;
     color: var(--text);
-    line-height: 1.5;
-    padding-top: 2px;
+    line-height: 1.4;
   }
 
-  .ios-step strong {
+  .step-content strong {
     color: var(--accent);
     font-weight: 600;
   }
 
-  .share-icon {
+  .step-connector {
+    width: 1px;
+    height: 8px;
+    background: var(--border-gold);
+    margin-left: 16px;
+  }
+
+  .share-icon-inline {
     display: inline-flex;
     vertical-align: middle;
     color: var(--accent);
+    margin: 0 2px;
   }
 
   .btn-skip {
     display: block;
     width: 100%;
-    margin-top: 24px;
+    margin-top: 28px;
     padding: 12px;
     background: transparent;
     color: var(--text-muted);
