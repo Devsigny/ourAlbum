@@ -95,7 +95,7 @@
           <div class="deco-line"></div>
         </div>
 
-        <p class="prelude">You are cordially invited to</p>
+        <p class="prelude">Welcome to</p>
         <h1>Val & Isa</h1>
         <p class="event-subtitle">A Great Gatsby Night</p>
 

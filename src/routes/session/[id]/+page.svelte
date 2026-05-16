@@ -6,6 +6,8 @@
   import { PUBLIC_SUPABASE_URL } from '$env/static/public';
   import { supabase } from '$lib/supabase';
   import { compressImage } from '$lib/image';
+  import { PARTY_SESSION_ID } from '$lib/config';
+  import QRCode from 'qrcode';
   import type { Session, Guest, Photo } from '$lib/types';
 
   let session = $state<Session | null>(null);
@@ -20,8 +22,23 @@
   let lightboxPhoto = $state<Photo | null>(null);
   let lightboxIdx = $state(-1);
   let knownPhotoIds = new Set<string>();
+  let showQr = $state(false);
+  let qrDataUrl = $state('');
 
   const sessionId = page.params.id;
+
+  async function openQrModal() {
+    if (!qrDataUrl) {
+      const joinUrl = `${window.location.origin}/join/${PARTY_SESSION_ID}`;
+      qrDataUrl = await QRCode.toDataURL(joinUrl, {
+        width: 500,
+        margin: 2,
+        color: { dark: '#000000', light: '#ffffff' },
+        errorCorrectionLevel: 'H'
+      });
+    }
+    showQr = true;
+  }
 
   function getPhotoUrl(path: string) {
     return supabase.storage.from('photos').getPublicUrl(path).data.publicUrl;
@@ -428,6 +445,18 @@
   </div>
 {/if}
 
+{#if showQr}
+  <div class="qr-overlay" onclick={() => { showQr = false; }} role="dialog">
+    <div class="qr-modal" onclick={(e) => e.stopPropagation()}>
+      <p class="qr-title">Scan to join</p>
+      {#if qrDataUrl}
+        <img class="qr-img" src={qrDataUrl} alt="QR Code" />
+      {/if}
+      <button class="qr-close" onclick={() => { showQr = false; }}>Close</button>
+    </div>
+  </div>
+{/if}
+
 <div class="session-page">
   <div class="sticky-top">
     <header>
@@ -457,6 +486,9 @@
         <button class="btn btn-secondary" onclick={openGallery}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           Gallery
+        </button>
+        <button class="btn btn-qr" onclick={openQrModal} aria-label="Share QR code">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/><line x1="21" y1="14" x2="21" y2="17"/><line x1="14" y1="21" x2="17" y2="21"/><line x1="21" y1="21" x2="21" y2="21"/></svg>
         </button>
       </div>
     {/if}
@@ -572,6 +604,23 @@
     display: flex;
     gap: 12px;
     margin: 8px auto 10px;
+  }
+
+  .btn-qr {
+    padding: 0 12px !important;
+    flex: 0 !important;
+    background: transparent;
+    border: 1px solid var(--border-gold);
+    border-radius: var(--radius);
+    color: var(--accent);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn-qr:active {
+    background: rgba(201, 168, 76, 0.1);
   }
 
   .actions .btn {
@@ -837,5 +886,51 @@
 
   .lb-delete:disabled {
     opacity: 0.4;
+  }
+
+  .qr-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgba(10, 10, 10, 0.92);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .qr-modal {
+    text-align: center;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-gold);
+    border-radius: 12px;
+    padding: 32px 24px;
+    max-width: 320px;
+    width: 100%;
+  }
+
+  .qr-title {
+    font-family: var(--font-display);
+    font-size: 20px;
+    color: var(--accent);
+    margin-bottom: 20px;
+    letter-spacing: 1px;
+  }
+
+  .qr-img {
+    width: 220px;
+    height: 220px;
+    border-radius: 8px;
+  }
+
+  .qr-close {
+    margin-top: 20px;
+    background: transparent;
+    border: 1px solid var(--border-gold);
+    color: var(--text-muted);
+    padding: 10px 28px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    cursor: pointer;
   }
 </style>
