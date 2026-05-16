@@ -132,140 +132,7 @@
 
 <div class="join-page">
   <div class="container">
-    {#if installChecked && !isInstalled}
-      <div class="install-gate">
-        <div class="deco-top">
-          <div class="deco-line"></div>
-          <div class="deco-diamond"></div>
-          <div class="deco-line"></div>
-        </div>
-
-        <p class="prelude">Before entering</p>
-        <h1>Install the App</h1>
-        <p class="install-subtitle">For the full Gatsby experience</p>
-
-        <div class="deco-divider">
-          <span class="deco-star">&#10022;</span>
-        </div>
-
-        {#if isIOS && !isIOSSafari}
-          <!-- iOS but NOT Safari - can't install from here -->
-          <div class="safari-warning">
-            <div class="safari-icon">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M16.24 7.76l-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z" fill="rgba(201,168,76,0.2)"/></svg>
-            </div>
-            <p class="warning-title">Switch to Safari</p>
-            <p class="warning-text">Only Safari can install apps on iPhone</p>
-
-            <div class="safari-steps">
-              <div class="guide-step">
-                <div class="step-badge">1</div>
-                <div class="step-content">
-                  <p>Copy this link</p>
-                </div>
-              </div>
-              <button class="copy-link-btn" onclick={copyLink}>
-                {#if linkCopied}
-                  <span class="copy-check">&#10003;</span> Copied!
-                {:else}
-                  <span class="copy-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></span>
-                  Tap to copy link
-                {/if}
-              </button>
-              <div class="step-connector"></div>
-              <div class="guide-step">
-                <div class="step-badge">2</div>
-                <div class="step-content">
-                  <p>Open <strong>Safari</strong> and paste in the address bar</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        {:else if isIOS && isIOSSafari}
-          <!-- iOS Safari - show visual guide -->
-          <div class="ios-visual-guide">
-            <p class="guide-intro">Tap the share button below</p>
-
-            <div class="share-arrow-container">
-              <div class="share-arrow">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
-              </div>
-            </div>
-
-            <div class="share-button-visual">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-            </div>
-
-            <div class="guide-steps">
-              <div class="guide-step">
-                <div class="step-badge">1</div>
-                <div class="step-content">
-                  <p>Tap <span class="share-icon-inline"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></span> in the toolbar below</p>
-                </div>
-              </div>
-              <div class="step-connector"></div>
-              <div class="guide-step">
-                <div class="step-badge">2</div>
-                <div class="step-content">
-                  <p>Scroll down, tap <strong>Add to Home Screen</strong></p>
-                </div>
-              </div>
-              <div class="step-connector"></div>
-              <div class="guide-step">
-                <div class="step-badge">3</div>
-                <div class="step-content">
-                  <p>Tap <strong>Add</strong> &mdash; then open from home</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        {:else if deferredPrompt}
-          <!-- Android with install prompt -->
-          <button class="btn btn-primary" onclick={installAndroid}>
-            Install App
-          </button>
-
-        {:else}
-          <!-- Android/other fallback -->
-          <div class="ios-visual-guide">
-            <div class="guide-steps">
-              <div class="guide-step">
-                <div class="step-badge">1</div>
-                <div class="step-content">
-                  <p>Tap <strong>&#8942;</strong> menu in your browser</p>
-                </div>
-              </div>
-              <div class="step-connector"></div>
-              <div class="guide-step">
-                <div class="step-badge">2</div>
-                <div class="step-content">
-                  <p>Tap <strong>Install app</strong> or <strong>Add to Home Screen</strong></p>
-                </div>
-              </div>
-              <div class="step-connector"></div>
-              <div class="guide-step">
-                <div class="step-badge">3</div>
-                <div class="step-content">
-                  <p>Open from your home screen</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        {/if}
-
-        <button class="btn-skip" onclick={skipInstall}>
-          Continue in browser
-        </button>
-
-        <div class="deco-bottom">
-          <div class="deco-line"></div>
-          <div class="deco-diamond"></div>
-          <div class="deco-line"></div>
-        </div>
-      </div>
-    {:else if notFound}
+    {#if notFound}
       <div class="center">
         <h1>Album not found</h1>
         <p>This link may have expired or doesn't exist.</p>
@@ -323,6 +190,28 @@
           <div class="deco-diamond"></div>
           <div class="deco-line"></div>
         </div>
+
+        {#if installChecked && !isInstalled}
+          <div class="install-hint">
+            {#if deferredPrompt}
+              <button class="install-banner" onclick={installAndroid}>
+                <span class="install-icon">&#10022;</span>
+                <span class="install-text">
+                  <strong>Add to Home Screen</strong>
+                  <small>For the best experience</small>
+                </span>
+              </button>
+            {:else if isIOS && isIOSSafari}
+              <div class="install-banner-static">
+                <span class="install-icon">&#10022;</span>
+                <span class="install-text">
+                  <strong>Add to Home Screen</strong>
+                  <small>Tap <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align: -2px;"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> then "Add to Home Screen"</small>
+                </span>
+              </div>
+            {/if}
+          </div>
+        {/if}
       </div>
     {/if}
   </div>
@@ -483,204 +372,53 @@
     to { transform: rotate(360deg); }
   }
 
-  /* Install gate */
-  .install-gate {
-    text-align: center;
-    padding: 40px 0;
+  /* Install suggestion banner */
+  .install-hint {
+    margin-top: 24px;
   }
 
-  .install-gate h1 {
-    font-family: var(--font-display);
-    font-size: 34px;
-    font-weight: 800;
-    color: var(--accent);
-    letter-spacing: 1px;
-    margin-bottom: 6px;
-  }
-
-  .install-subtitle {
-    font-family: var(--font-body);
-    font-size: 16px;
-    font-style: italic;
-    color: var(--text-muted);
-  }
-
-  /* Safari warning (non-Safari iOS) */
-  .safari-warning {
-    text-align: center;
-    margin: 8px 0;
-  }
-
-  .safari-icon {
-    margin-bottom: 16px;
-  }
-
-  .warning-title {
-    font-family: var(--font-display);
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 6px;
-  }
-
-  .warning-text {
-    font-size: 15px;
-    color: var(--text-muted);
-    font-style: italic;
-    margin-bottom: 20px;
-  }
-
-  .safari-steps {
-    text-align: left;
-  }
-
-  .copy-link-btn {
+  .install-banner,
+  .install-banner-static {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
+    gap: 12px;
     width: 100%;
-    padding: 14px;
-    margin: 12px 0;
+    padding: 14px 16px;
     background: var(--accent-dim);
-    border: 1px dashed var(--accent);
+    border: 1px solid var(--border-gold);
     border-radius: var(--radius);
-    color: var(--accent);
-    font-family: var(--font-display);
-    font-size: 15px;
-    font-weight: 600;
-    letter-spacing: 1px;
-    text-transform: uppercase;
+    color: var(--text);
+    text-align: left;
     transition: all 0.2s;
   }
 
-  .copy-link-btn:active {
+  .install-banner:active {
     background: rgba(201, 168, 76, 0.25);
+    border-color: var(--accent);
   }
 
-  .copy-check {
-    font-size: 18px;
+  .install-icon {
+    color: var(--accent);
+    font-size: 22px;
+    flex-shrink: 0;
   }
 
-  .copy-icon {
-    display: inline-flex;
-  }
-
-  /* iOS Safari visual guide */
-  .ios-visual-guide {
-    margin: 8px 0;
-  }
-
-  .guide-intro {
-    font-family: var(--font-body);
-    font-size: 18px;
-    color: var(--text);
-    font-style: italic;
-    margin-bottom: 16px;
-  }
-
-  .share-arrow-container {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 8px;
-  }
-
-  .share-arrow {
-    animation: bounce-down 1.2s ease-in-out infinite;
-  }
-
-  @keyframes bounce-down {
-    0%, 100% { transform: translateY(0); opacity: 1; }
-    50% { transform: translateY(12px); opacity: 0.6; }
-  }
-
-  .share-button-visual {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    border: 2px solid var(--accent);
-    border-radius: 10px;
-    margin-bottom: 28px;
-    animation: pulse-glow 2s ease-in-out infinite;
-  }
-
-  @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 8px rgba(201, 168, 76, 0.2); }
-    50% { box-shadow: 0 0 24px rgba(201, 168, 76, 0.5); }
-  }
-
-  .guide-steps {
-    text-align: left;
+  .install-text {
     display: flex;
     flex-direction: column;
-    align-items: stretch;
+    gap: 2px;
   }
 
-  .guide-step {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 12px 0;
-  }
-
-  .step-badge {
-    flex-shrink: 0;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--accent-dim);
-    border: 1px solid var(--border-gold);
-    color: var(--accent);
+  .install-text strong {
     font-family: var(--font-display);
-    font-size: 15px;
-    font-weight: 700;
-    border-radius: 50%;
-  }
-
-  .step-content p {
-    font-size: 16px;
-    color: var(--text);
-    line-height: 1.4;
-  }
-
-  .step-content strong {
-    color: var(--accent);
-    font-weight: 600;
-  }
-
-  .step-connector {
-    width: 1px;
-    height: 8px;
-    background: var(--border-gold);
-    margin-left: 16px;
-  }
-
-  .share-icon-inline {
-    display: inline-flex;
-    vertical-align: middle;
-    color: var(--accent);
-    margin: 0 2px;
-  }
-
-  .btn-skip {
-    display: block;
-    width: 100%;
-    margin-top: 28px;
-    padding: 12px;
-    background: transparent;
-    color: var(--text-muted);
-    font-family: var(--font-body);
     font-size: 14px;
-    font-style: italic;
+    font-weight: 600;
+    color: var(--accent);
     letter-spacing: 0.5px;
-    transition: color 0.2s;
   }
 
-  .btn-skip:hover {
-    color: var(--text);
+  .install-text small {
+    font-size: 13px;
+    color: var(--text-muted);
   }
 </style>
