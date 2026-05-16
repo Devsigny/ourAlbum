@@ -462,6 +462,9 @@
     <header>
       <div class="container">
         {#if session}
+          <button class="qr-btn" onclick={openQrModal} aria-label="Share QR code">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/><line x1="21" y1="14" x2="21" y2="17"/><line x1="14" y1="21" x2="17" y2="21"/><line x1="21" y1="21" x2="21" y2="21"/></svg>
+          </button>
           <h1>Val & Isa</h1>
           <div class="header-row">
             <span class="stats">{photos.length} photo{photos.length !== 1 ? 's' : ''} &#10022; {guests.length} guest{guests.length !== 1 ? 's' : ''}</span>
@@ -486,9 +489,6 @@
         <button class="btn btn-secondary" onclick={openGallery}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           Gallery
-        </button>
-        <button class="btn btn-qr" onclick={openQrModal} aria-label="Share QR code">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/><line x1="21" y1="14" x2="21" y2="17"/><line x1="14" y1="21" x2="17" y2="21"/><line x1="21" y1="21" x2="21" y2="21"/></svg>
         </button>
       </div>
     {/if}
@@ -552,6 +552,7 @@
   header {
     padding: 16px 0 8px;
     text-align: center;
+    position: relative;
   }
 
   header h1 {
@@ -606,21 +607,25 @@
     margin: 8px auto 10px;
   }
 
-  .btn-qr {
-    padding: 0 12px !important;
-    flex: 0 !important;
-    background: transparent;
+  .qr-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: rgba(201, 168, 76, 0.1);
     border: 1px solid var(--border-gold);
-    border-radius: var(--radius);
+    border-radius: 50%;
     color: var(--accent);
+    width: 36px;
+    height: 36px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+    -webkit-tap-highlight-color: transparent;
   }
 
-  .btn-qr:active {
-    background: rgba(201, 168, 76, 0.1);
+  .qr-btn:active {
+    background: rgba(201, 168, 76, 0.2);
   }
 
   .actions .btn {
