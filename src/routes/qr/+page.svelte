@@ -10,8 +10,8 @@
     joinUrl = `${window.location.origin}/join/${PARTY_SESSION_ID}`;
     qrDataUrl = await QRCode.toDataURL(joinUrl, {
       width: 600,
-      margin: 2,
-      color: { dark: '#c9a84c', light: '#1a1a1a' },
+      margin: 3,
+      color: { dark: '#000000', light: '#ffffff' },
       errorCorrectionLevel: 'H'
     });
   }
@@ -215,9 +215,10 @@
 
   .qr-frame {
     display: inline-block;
-    padding: 16px;
+    padding: 20px;
+    background: #ffffff;
     border: 2px solid rgba(201, 168, 76, 0.3);
-    border-radius: 4px;
+    border-radius: 8px;
   }
 
   .qr-frame img {
