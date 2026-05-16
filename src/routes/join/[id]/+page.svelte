@@ -17,6 +17,7 @@
   let isAndroid = $state(false);
   let deferredPrompt = $state<any>(null);
   let installChecked = $state(false);
+  let linkCopied = $state(false);
 
   const sessionId = page.params.id;
 
@@ -58,6 +59,8 @@
 
   function copyLink() {
     navigator.clipboard.writeText(window.location.href);
+    linkCopied = true;
+    setTimeout(() => linkCopied = false, 2000);
   }
 
   function skipInstall() {
@@ -145,15 +148,35 @@
         {#if isIOS && !isIOSSafari}
           <!-- iOS but NOT Safari - can't install from here -->
           <div class="safari-warning">
-            <div class="warning-icon">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16.24 7.76l-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z"/></svg>
+            <div class="safari-icon">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M16.24 7.76l-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z" fill="rgba(201,168,76,0.2)"/></svg>
             </div>
-            <p class="warning-title">Open in Safari</p>
+            <p class="warning-title">Switch to Safari</p>
             <p class="warning-text">Only Safari can install apps on iPhone</p>
-            <button class="btn btn-primary" onclick={copyLink}>
-              Copy Link
-            </button>
-            <p class="warning-hint">Then paste it in Safari</p>
+
+            <div class="safari-steps">
+              <div class="guide-step">
+                <div class="step-badge">1</div>
+                <div class="step-content">
+                  <p>Copy this link</p>
+                </div>
+              </div>
+              <button class="copy-link-btn" onclick={copyLink}>
+                {#if linkCopied}
+                  <span class="copy-check">&#10003;</span> Copied!
+                {:else}
+                  <span class="copy-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></span>
+                  Tap to copy link
+                {/if}
+              </button>
+              <div class="step-connector"></div>
+              <div class="guide-step">
+                <div class="step-badge">2</div>
+                <div class="step-content">
+                  <p>Open <strong>Safari</strong> and paste in the address bar</p>
+                </div>
+              </div>
+            </div>
           </div>
 
         {:else if isIOS && isIOSSafari}
@@ -485,13 +508,13 @@
     margin: 8px 0;
   }
 
-  .warning-icon {
+  .safari-icon {
     margin-bottom: 16px;
   }
 
   .warning-title {
     font-family: var(--font-display);
-    font-size: 22px;
+    font-size: 24px;
     font-weight: 700;
     color: var(--text);
     margin-bottom: 6px;
@@ -501,14 +524,43 @@
     font-size: 15px;
     color: var(--text-muted);
     font-style: italic;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
   }
 
-  .warning-hint {
-    font-size: 13px;
-    color: var(--text-muted);
-    margin-top: 12px;
-    font-style: italic;
+  .safari-steps {
+    text-align: left;
+  }
+
+  .copy-link-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 14px;
+    margin: 12px 0;
+    background: var(--accent-dim);
+    border: 1px dashed var(--accent);
+    border-radius: var(--radius);
+    color: var(--accent);
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+
+  .copy-link-btn:active {
+    background: rgba(201, 168, 76, 0.25);
+  }
+
+  .copy-check {
+    font-size: 18px;
+  }
+
+  .copy-icon {
+    display: inline-flex;
   }
 
   /* iOS Safari visual guide */
