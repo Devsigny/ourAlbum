@@ -608,7 +608,7 @@
   .qr-btn {
     position: absolute;
     top: 16px;
-    right: 16px;
+    left: 16px;
     background: rgba(201, 168, 76, 0.1);
     border: 1px solid var(--border-gold);
     border-radius: 50%;
