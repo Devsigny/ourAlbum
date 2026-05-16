@@ -71,6 +71,15 @@
       .single();
 
     if (data) {
+      const { data: adminGuest } = await supabase
+        .from('guests')
+        .insert({ session_id: data.id, name: 'Admin' })
+        .select()
+        .single();
+      if (adminGuest) {
+        localStorage.setItem(`guest_${data.id}`, JSON.stringify(adminGuest));
+      }
+
       sessions = [data, ...sessions];
       name = '';
       description = '';

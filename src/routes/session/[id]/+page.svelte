@@ -15,11 +15,49 @@
   let galleryInput = $state<HTMLInputElement | null>(null);
   let lightboxPhoto = $state<Photo | null>(null);
   let lightboxIdx = $state(-1);
+  let lastCameraUploadDone = $state(false);
 
   const sessionId = page.params.id;
 
   function getPhotoUrl(path: string) {
     return supabase.storage.from('photos').getPublicUrl(path).data.publicUrl;
+  }
+
+  async function tryAutoJoinAdmin(): Promise<boolean> {
+    const { data: authData } = await supabase.auth.getSession();
+    const authUser = authData.session?.user;
+    if (!authUser) return false;
+
+    const { data: sess } = await supabase
+      .from('sessions')
+      .select('*')
+      .eq('id', sessionId)
+      .single();
+    if (!sess || sess.created_by !== authUser.id) return false;
+
+    let { data: existing } = await supabase
+      .from('guests')
+      .select('*')
+      .eq('session_id', sessionId)
+      .eq('name', 'Admin')
+      .limit(1)
+      .maybeSingle();
+
+    if (!existing) {
+      const { data: created } = await supabase
+        .from('guests')
+        .insert({ session_id: sessionId, name: 'Admin' })
+        .select()
+        .single();
+      existing = created;
+    }
+
+    if (existing) {
+      guest = existing;
+      localStorage.setItem(`guest_${sessionId}`, JSON.stringify(existing));
+      return true;
+    }
+    return false;
   }
 
   async function loadData() {
@@ -31,8 +69,11 @@
     }
 
     if (!guest) {
-      goto(`/join/${sessionId}`);
-      return;
+      const autoJoined = await tryAutoJoinAdmin();
+      if (!autoJoined) {
+        goto(`/join/${sessionId}`);
+        return;
+      }
     }
 
     const [sessionRes, photosRes, guestsRes] = await Promise.all([
@@ -72,7 +113,7 @@
       .subscribe();
   }
 
-  async function uploadPhoto(file: File) {
+  async function uploadPhoto(file: File, fromCamera = false) {
     if (!guest) return;
     uploading = true;
     uploadCount++;
@@ -87,11 +128,15 @@
 
       if (uploadErr) throw uploadErr;
 
-      await supabase.from('photos').insert({
+      const { data: newPhoto } = await supabase.from('photos').insert({
         session_id: sessionId,
         guest_id: guest.id,
         storage_path: path
-      });
+      }).select('*, guest:guests(name)').single();
+
+      if (newPhoto && !photos.some(p => p.id === newPhoto.id)) {
+        photos = [newPhoto, ...photos];
+      }
     } catch (e) {
       console.error('Upload failed:', e);
     }
@@ -101,14 +146,22 @@
       uploading = false;
       uploadCount = 0;
     }
+
+    if (fromCamera) {
+      lastCameraUploadDone = true;
+      setTimeout(() => {
+        lastCameraUploadDone = false;
+        cameraInput?.click();
+      }, 300);
+    }
   }
 
-  function handleFileSelect(e: Event) {
+  function handleFileSelect(e: Event, fromCamera = false) {
     const input = e.target as HTMLInputElement;
     const files = input.files;
-    if (!files) return;
+    if (!files || files.length === 0) return;
     for (const file of files) {
-      uploadPhoto(file);
+      uploadPhoto(file, fromCamera && files.length === 1);
     }
     input.value = '';
   }
@@ -156,7 +209,7 @@
   type="file"
   accept="image/*"
   capture="environment"
-  onchange={handleFileSelect}
+  onchange={(e) => handleFileSelect(e, true)}
   hidden
 />
 <input
@@ -164,7 +217,7 @@
   type="file"
   accept="image/*"
   multiple
-  onchange={handleFileSelect}
+  onchange={(e) => handleFileSelect(e, false)}
   hidden
 />
 
@@ -224,6 +277,7 @@
         <div class="upload-bar">
           <div class="upload-progress"></div>
         </div>
+        <p class="upload-hint">{uploadCount} uploading...</p>
       </div>
     {/if}
   {/if}
@@ -342,6 +396,14 @@
     0% { width: 0%; }
     50% { width: 70%; }
     100% { width: 100%; }
+  }
+
+  .upload-hint {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    margin-bottom: 8px;
   }
 
   .gallery {
