@@ -11,7 +11,49 @@
   let error = $state('');
   let notFound = $state(false);
 
+  let isInstalled = $state(false);
+  let isIOS = $state(false);
+  let isAndroid = $state(false);
+  let deferredPrompt = $state<any>(null);
+  let showIOSGuide = $state(false);
+  let installChecked = $state(false);
+
   const sessionId = page.params.id;
+
+  function checkInstallState() {
+    const standalone = window.matchMedia('(display-mode: standalone)').matches
+      || (navigator as any).standalone === true;
+    isInstalled = standalone;
+
+    const ua = navigator.userAgent.toLowerCase();
+    isIOS = /iphone|ipad|ipod/.test(ua) && !(window as any).MSStream;
+    isAndroid = /android/.test(ua);
+
+    window.addEventListener('beforeinstallprompt', (e: Event) => {
+      e.preventDefault();
+      deferredPrompt = e;
+    });
+
+    window.matchMedia('(display-mode: standalone)').addEventListener('change', (e) => {
+      if (e.matches) isInstalled = true;
+    });
+
+    installChecked = true;
+  }
+
+  async function installAndroid() {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const result = await deferredPrompt.userChoice;
+    if (result.outcome === 'accepted') {
+      isInstalled = true;
+    }
+    deferredPrompt = null;
+  }
+
+  function skipInstall() {
+    isInstalled = true;
+  }
 
   async function loadSession() {
     const stored = localStorage.getItem(`guest_${sessionId}`);
@@ -69,12 +111,86 @@
     }
   }
 
+  checkInstallState();
   loadSession();
 </script>
 
 <div class="join-page">
   <div class="container">
-    {#if notFound}
+    {#if installChecked && !isInstalled}
+      <div class="install-gate">
+        <div class="deco-top">
+          <div class="deco-line"></div>
+          <div class="deco-diamond"></div>
+          <div class="deco-line"></div>
+        </div>
+
+        <p class="prelude">Before entering</p>
+        <h1>Install the App</h1>
+        <p class="install-subtitle">For the best experience tonight</p>
+
+        <div class="deco-divider">
+          <span class="deco-star">&#10022;</span>
+        </div>
+
+        {#if isIOS}
+          {#if !showIOSGuide}
+            <button class="btn btn-primary" onclick={() => showIOSGuide = true}>
+              How to Install
+            </button>
+          {/if}
+          {#if showIOSGuide}
+            <div class="ios-guide">
+              <div class="ios-step">
+                <span class="step-num">1</span>
+                <p>Tap the <strong>Share</strong> button <span class="share-icon">&#xFEFF;<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></span> at the bottom of Safari</p>
+              </div>
+              <div class="ios-step">
+                <span class="step-num">2</span>
+                <p>Scroll down and tap <strong>Add to Home Screen</strong></p>
+              </div>
+              <div class="ios-step">
+                <span class="step-num">3</span>
+                <p>Tap <strong>Add</strong> in the top right</p>
+              </div>
+              <div class="ios-step">
+                <span class="step-num">4</span>
+                <p>Open the app from your home screen</p>
+              </div>
+            </div>
+          {/if}
+        {:else if deferredPrompt}
+          <button class="btn btn-primary" onclick={installAndroid}>
+            Install App
+          </button>
+        {:else}
+          <div class="ios-guide">
+            <div class="ios-step">
+              <span class="step-num">1</span>
+              <p>Open your browser menu <strong>(three dots)</strong></p>
+            </div>
+            <div class="ios-step">
+              <span class="step-num">2</span>
+              <p>Tap <strong>Install app</strong> or <strong>Add to Home Screen</strong></p>
+            </div>
+            <div class="ios-step">
+              <span class="step-num">3</span>
+              <p>Open it from your home screen</p>
+            </div>
+          </div>
+        {/if}
+
+        <button class="btn-skip" onclick={skipInstall}>
+          Continue without installing
+        </button>
+
+        <div class="deco-bottom">
+          <div class="deco-line"></div>
+          <div class="deco-diamond"></div>
+          <div class="deco-line"></div>
+        </div>
+      </div>
+    {:else if notFound}
       <div class="center">
         <h1>Album not found</h1>
         <p>This link may have expired or doesn't exist.</p>
@@ -290,5 +406,92 @@
 
   @keyframes spin {
     to { transform: rotate(360deg); }
+  }
+
+  /* Install gate */
+  .install-gate {
+    text-align: center;
+    padding: 40px 0;
+  }
+
+  .install-gate h1 {
+    font-family: var(--font-display);
+    font-size: 34px;
+    font-weight: 800;
+    color: var(--accent);
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+
+  .install-subtitle {
+    font-family: var(--font-body);
+    font-size: 16px;
+    font-style: italic;
+    color: var(--text-muted);
+  }
+
+  .ios-guide {
+    text-align: left;
+    margin: 24px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .ios-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .step-num {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-gold);
+    color: var(--accent);
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: 50%;
+  }
+
+  .ios-step p {
+    font-size: 16px;
+    color: var(--text);
+    line-height: 1.5;
+    padding-top: 2px;
+  }
+
+  .ios-step strong {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .share-icon {
+    display: inline-flex;
+    vertical-align: middle;
+    color: var(--accent);
+  }
+
+  .btn-skip {
+    display: block;
+    width: 100%;
+    margin-top: 24px;
+    padding: 12px;
+    background: transparent;
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-style: italic;
+    letter-spacing: 0.5px;
+    transition: color 0.2s;
+  }
+
+  .btn-skip:hover {
+    color: var(--text);
   }
 </style>
