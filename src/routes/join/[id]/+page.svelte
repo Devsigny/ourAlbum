@@ -86,27 +86,35 @@
       </div>
     {:else}
       <div class="join-card">
-        <div class="sparkle">&#10022;</div>
-        <h1>{session.name}</h1>
-        {#if session.description}
-          <p class="desc">{session.description}</p>
-        {/if}
+        <div class="deco-top">
+          <div class="deco-line"></div>
+          <div class="deco-diamond"></div>
+          <div class="deco-line"></div>
+        </div>
+
+        <p class="prelude">You are cordially invited to</p>
+        <h1>Val & Isa</h1>
+        <p class="event-subtitle">A Great Gatsby Night</p>
+
+        <div class="deco-divider">
+          <span class="deco-star">&#10022;</span>
+        </div>
 
         {#if existingGuest}
-          <p class="welcome-back">Welcome back, <strong>{existingGuest.name}</strong>!</p>
+          <p class="welcome-back">Welcome back, <strong>{existingGuest.name}</strong></p>
           <button class="btn btn-primary" onclick={rejoin}>
-            Open Album
+            Enter the Party
           </button>
           <button class="btn btn-secondary join-new" onclick={() => { existingGuest = null; }}>
-            Join as someone else
+            Different guest
           </button>
         {:else}
-          <p class="invite-text">You're invited to capture this moment together</p>
+          <p class="invite-text">Capture this evening through everyone's eyes</p>
           <form onsubmit={(e) => { e.preventDefault(); joinSession(); }}>
             <input
               class="input"
               type="text"
-              placeholder="Your name"
+              placeholder="Your name, darling"
               bind:value={guestName}
               autocomplete="name"
             />
@@ -114,10 +122,16 @@
               <p class="error">{error}</p>
             {/if}
             <button class="btn btn-primary" type="submit" disabled={joining || !guestName.trim()}>
-              {joining ? 'Joining...' : 'Join Album'}
+              {joining ? 'Entering...' : 'Enter the Party'}
             </button>
           </form>
         {/if}
+
+        <div class="deco-bottom">
+          <div class="deco-line"></div>
+          <div class="deco-diamond"></div>
+          <div class="deco-line"></div>
+        </div>
       </div>
     {/if}
   </div>
@@ -128,6 +142,9 @@
     min-height: 100dvh;
     display: flex;
     align-items: center;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(201, 168, 76, 0.08) 0%, transparent 60%),
+      var(--bg);
   }
 
   .center {
@@ -136,6 +153,7 @@
   }
 
   .center h1 {
+    font-family: var(--font-display);
     font-size: 24px;
     margin-bottom: 8px;
   }
@@ -149,50 +167,106 @@
     padding: 40px 0;
   }
 
-  .sparkle {
-    font-size: 40px;
-    color: var(--accent);
-    margin-bottom: 16px;
+  .prelude {
+    font-size: 14px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 12px;
   }
 
   .join-card h1 {
-    font-size: 28px;
-    font-weight: 700;
-    margin-bottom: 8px;
+    font-family: var(--font-display);
+    font-size: 42px;
+    font-weight: 800;
+    color: var(--accent);
+    letter-spacing: 2px;
+    margin-bottom: 6px;
   }
 
-  .desc {
+  .event-subtitle {
+    font-family: var(--font-body);
+    font-size: 18px;
+    font-style: italic;
     color: var(--text-muted);
-    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+
+  .deco-top, .deco-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin: 24px 0;
+  }
+
+  .deco-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  }
+
+  .deco-diamond {
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    transform: rotate(45deg);
+  }
+
+  .deco-divider {
+    margin: 28px 0;
+    text-align: center;
+    position: relative;
+  }
+
+  .deco-divider::before {
+    content: '';
+    position: absolute;
+    left: 20%;
+    right: 20%;
+    top: 50%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border-gold), transparent);
+  }
+
+  .deco-star {
+    position: relative;
+    color: var(--accent);
+    font-size: 18px;
+    background: var(--bg);
+    padding: 0 16px;
   }
 
   .invite-text {
     color: var(--text-muted);
-    font-size: 14px;
+    font-size: 16px;
+    font-style: italic;
     margin-bottom: 32px;
   }
 
   .welcome-back {
     color: var(--text-muted);
-    font-size: 16px;
+    font-size: 18px;
     margin: 24px 0;
   }
 
   .welcome-back strong {
     color: var(--accent);
+    font-family: var(--font-display);
+    font-weight: 700;
   }
 
   .join-new {
     margin-top: 12px;
     width: 100%;
-    font-size: 13px;
+    font-size: 12px;
     padding: 10px;
   }
 
   form {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
   }
 
   .btn {
@@ -207,7 +281,7 @@
   .loader {
     width: 32px;
     height: 32px;
-    border: 3px solid var(--border);
+    border: 2px solid var(--border-gold);
     border-top-color: var(--accent);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;

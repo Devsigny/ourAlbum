@@ -199,7 +199,7 @@
 
 <svelte:head>
   {#if session}
-    <title>{session.name} - ourAlbum</title>
+    <title>Val & Isa - Gatsby Night</title>
   {/if}
 </svelte:head>
 
@@ -243,14 +243,20 @@
   <header>
     <div class="container">
       {#if session}
-        <h1>{session.name}</h1>
+        <div class="header-deco">
+          <div class="deco-line"></div>
+          <div class="deco-diamond"></div>
+          <div class="deco-line"></div>
+        </div>
+        <h1>Val & Isa</h1>
+        <p class="header-subtitle">A Great Gatsby Night</p>
         <div class="stats">
           <span>{photos.length} photo{photos.length !== 1 ? 's' : ''}</span>
-          <span class="dot"></span>
+          <span class="dot">&#10022;</span>
           <span>{guests.length} guest{guests.length !== 1 ? 's' : ''}</span>
         </div>
         {#if guest}
-          <p class="guest-badge">Logged in as <strong>{guest.name}</strong></p>
+          <p class="guest-badge"><strong>{guest.name}</strong></p>
         {/if}
       {:else}
         <div class="loading-header">
@@ -263,12 +269,12 @@
   {#if guest}
     <div class="actions container">
       <button class="btn btn-primary" onclick={openNativeCamera}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-        Camera
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        Capture
       </button>
       <button class="btn btn-secondary" onclick={openGallery}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        Upload
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Gallery
       </button>
     </div>
 
@@ -285,8 +291,9 @@
   <div class="gallery container">
     {#if photos.length === 0}
       <div class="empty-gallery">
+        <p class="empty-icon">&#10022;</p>
         <p>No photos yet</p>
-        <p class="hint">Be the first to capture a moment!</p>
+        <p class="hint">Be the first to capture a moment, old sport!</p>
       </div>
     {:else}
       <div class="photo-grid">
@@ -311,43 +318,78 @@
   .session-page {
     min-height: 100dvh;
     padding-bottom: 40px;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(201, 168, 76, 0.06) 0%, transparent 50%),
+      var(--bg);
   }
 
   header {
-    padding: 48px 0 12px;
+    padding: 40px 0 12px;
     text-align: center;
   }
 
+  .header-deco {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .header-deco .deco-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  }
+
+  .header-deco .deco-diamond {
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+    transform: rotate(45deg);
+  }
+
   header h1 {
-    font-size: 26px;
-    font-weight: 700;
+    font-family: var(--font-display);
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--accent);
+    letter-spacing: 1px;
+  }
+
+  .header-subtitle {
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-style: italic;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    margin-top: 2px;
   }
 
   .stats {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    margin-top: 8px;
+    gap: 10px;
+    margin-top: 10px;
     color: var(--text-muted);
     font-size: 14px;
+    letter-spacing: 0.5px;
   }
 
   .dot {
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background: var(--text-muted);
+    color: var(--accent);
+    font-size: 8px;
   }
 
   .guest-badge {
-    margin-top: 8px;
+    margin-top: 6px;
     font-size: 13px;
     color: var(--text-muted);
   }
 
   .guest-badge strong {
     color: var(--accent);
+    font-family: var(--font-display);
   }
 
   .loading-header {
@@ -359,7 +401,7 @@
   .loader {
     width: 28px;
     height: 28px;
-    border: 3px solid var(--border);
+    border: 2px solid var(--border-gold);
     border-top-color: var(--accent);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
@@ -378,31 +420,31 @@
   }
 
   .upload-bar {
-    height: 3px;
-    background: var(--border);
-    border-radius: 2px;
+    height: 2px;
+    background: var(--border-gold);
     overflow: hidden;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
   }
 
   .upload-progress {
     height: 100%;
-    background: var(--accent);
-    border-radius: 2px;
-    animation: progress 1.5s ease-in-out infinite;
+    background: linear-gradient(90deg, var(--accent), #e8d48b, var(--accent));
+    background-size: 200% 100%;
+    animation: progress-shine 1.5s ease-in-out infinite;
   }
 
-  @keyframes progress {
-    0% { width: 0%; }
-    50% { width: 70%; }
-    100% { width: 100%; }
+  @keyframes progress-shine {
+    0% { width: 0%; background-position: 0% 0%; }
+    50% { width: 70%; background-position: 100% 0%; }
+    100% { width: 100%; background-position: 0% 0%; }
   }
 
   .upload-hint {
     text-align: center;
     font-size: 12px;
     color: var(--text-muted);
-    margin-top: 4px;
+    font-style: italic;
+    margin-top: 2px;
     margin-bottom: 8px;
   }
 
@@ -415,13 +457,20 @@
     padding: 60px 0;
   }
 
+  .empty-icon {
+    font-size: 32px;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+
   .empty-gallery p {
     color: var(--text-muted);
     font-size: 18px;
+    font-style: italic;
   }
 
   .hint {
-    font-size: 14px !important;
+    font-size: 15px !important;
     margin-top: 8px;
   }
 
@@ -441,7 +490,7 @@
     position: relative;
     aspect-ratio: 1;
     overflow: hidden;
-    border-radius: 4px;
+    border-radius: 2px;
     background: var(--bg-card);
     padding: 0;
     border: none;
@@ -465,14 +514,16 @@
     left: 0;
     right: 0;
     padding: 20px 6px 5px;
-    background: linear-gradient(transparent, rgba(0,0,0,0.65));
+    background: linear-gradient(transparent, rgba(0,0,0,0.7));
   }
 
   .photo-author {
-    font-size: 10px;
+    font-family: var(--font-body);
+    font-size: 11px;
     font-weight: 500;
-    color: rgba(255,255,255,0.9);
-    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    color: rgba(232, 212, 139, 0.9);
+    text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+    letter-spacing: 0.5px;
   }
 
   /* Lightbox */
@@ -480,7 +531,7 @@
     position: fixed;
     inset: 0;
     z-index: 99;
-    background: rgba(0,0,0,0.97);
+    background: rgba(10,10,10,0.97);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -493,21 +544,23 @@
     max-width: 92vw;
     max-height: 80vh;
     object-fit: contain;
-    border-radius: 4px;
+    border-radius: 2px;
     cursor: default;
+    border: 1px solid var(--border-gold);
   }
 
   .lightbox-info {
     display: flex;
     gap: 12px;
     margin-top: 14px;
-    font-size: 14px;
+    font-size: 15px;
     cursor: default;
   }
 
   .lb-name {
-    color: var(--text);
-    font-weight: 500;
+    color: var(--accent);
+    font-family: var(--font-display);
+    font-weight: 600;
   }
 
   .lb-time {
@@ -518,9 +571,9 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    background: rgba(255,255,255,0.1);
-    border: none;
-    color: white;
+    background: rgba(201, 168, 76, 0.1);
+    border: 1px solid rgba(201, 168, 76, 0.2);
+    color: var(--accent);
     font-size: 36px;
     width: 48px;
     height: 48px;
@@ -529,11 +582,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.2s;
+    transition: all 0.2s;
   }
 
   .lb-nav:hover {
-    background: rgba(255,255,255,0.2);
+    background: rgba(201, 168, 76, 0.2);
+    border-color: var(--accent);
   }
 
   .lb-prev { left: 12px; }
@@ -543,9 +597,9 @@
     position: absolute;
     top: 16px;
     right: 16px;
-    background: rgba(255,255,255,0.1);
-    border: none;
-    color: white;
+    background: rgba(201, 168, 76, 0.1);
+    border: 1px solid rgba(201, 168, 76, 0.2);
+    color: var(--accent);
     font-size: 20px;
     width: 40px;
     height: 40px;
