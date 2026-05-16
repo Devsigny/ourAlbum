@@ -70,7 +70,26 @@
 
 <style>
   @media print {
-    :global(body) { background: #1a1a1a !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    :global(body) { background: #ffffff !important; }
+
+    .print-page { background: #ffffff; }
+    .border-outer { border-color: #c9a84c; }
+    .border-inner { border-color: rgba(201, 168, 76, 0.5); padding: 32px 28px; }
+
+    .corner::before, .corner::after { background: #c9a84c; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .deco-line { background: linear-gradient(90deg, transparent, #c9a84c, transparent) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .deco-diamond { background: #c9a84c !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .deco-star { background: #ffffff; color: #c9a84c; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .deco-divider::before { background: linear-gradient(90deg, transparent, rgba(201, 168, 76, 0.4), transparent) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+    .prelude { color: #666; }
+    h1 { color: #b8942e; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .subtitle { color: #666; }
+    .scan-text { color: #222; }
+    .url { color: #999; }
+    .tagline { color: #666; }
+
+    .qr-frame { border-color: #c9a84c; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   }
 
   .print-page {
