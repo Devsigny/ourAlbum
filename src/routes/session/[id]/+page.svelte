@@ -11,9 +11,8 @@
   let guests = $state<Guest[]>([]);
   let uploading = $state(false);
   let uploadCount = $state(0);
-  let showCamera = $state(false);
-  let videoEl = $state<HTMLVideoElement | null>(null);
-  let stream = $state<MediaStream | null>(null);
+  let cameraInput = $state<HTMLInputElement | null>(null);
+  let galleryInput = $state<HTMLInputElement | null>(null);
   let lightboxPhoto = $state<Photo | null>(null);
   let lightboxIdx = $state(-1);
 
@@ -114,39 +113,12 @@
     input.value = '';
   }
 
-  async function openCamera() {
-    showCamera = true;
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
-      });
-      if (videoEl) videoEl.srcObject = stream;
-    } catch {
-      showCamera = false;
-    }
+  function openNativeCamera() {
+    cameraInput?.click();
   }
 
-  async function capturePhoto() {
-    if (!videoEl || !stream) return;
-    const canvas = document.createElement('canvas');
-    canvas.width = videoEl.videoWidth;
-    canvas.height = videoEl.videoHeight;
-    canvas.getContext('2d')!.drawImage(videoEl, 0, 0);
-
-    canvas.toBlob(async (blob) => {
-      if (!blob) return;
-      const file = new File([blob], 'capture.jpg', { type: 'image/jpeg' });
-      closeCamera();
-      await uploadPhoto(file);
-    }, 'image/jpeg', 0.85);
-  }
-
-  function closeCamera() {
-    if (stream) {
-      stream.getTracks().forEach(t => t.stop());
-      stream = null;
-    }
-    showCamera = false;
+  function openGallery() {
+    galleryInput?.click();
   }
 
   function openLightbox(photo: Photo, idx: number) {
@@ -178,17 +150,23 @@
   {/if}
 </svelte:head>
 
-{#if showCamera}
-  <div class="camera-overlay">
-    <!-- svelte-ignore a11y_media_has_caption -->
-    <video bind:this={videoEl} autoplay playsinline></video>
-    <div class="camera-controls">
-      <button class="cam-btn cancel" onclick={closeCamera} aria-label="Close camera">&#10005;</button>
-      <button class="cam-btn shutter" onclick={capturePhoto} aria-label="Take photo"></button>
-      <div style="width:56px"></div>
-    </div>
-  </div>
-{/if}
+<!-- Hidden native file inputs -->
+<input
+  bind:this={cameraInput}
+  type="file"
+  accept="image/*"
+  capture="environment"
+  onchange={handleFileSelect}
+  hidden
+/>
+<input
+  bind:this={galleryInput}
+  type="file"
+  accept="image/*"
+  multiple
+  onchange={handleFileSelect}
+  hidden
+/>
 
 {#if lightboxPhoto}
   <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
@@ -231,15 +209,14 @@
 
   {#if guest}
     <div class="actions container">
-      <button class="btn btn-primary" onclick={openCamera}>
+      <button class="btn btn-primary" onclick={openNativeCamera}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
         Camera
       </button>
-      <label class="btn btn-secondary upload-label">
+      <button class="btn btn-secondary" onclick={openGallery}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
         Upload
-        <input type="file" accept="image/*" multiple onchange={handleFileSelect} hidden />
-      </label>
+      </button>
     </div>
 
     {#if uploading}
@@ -346,10 +323,6 @@
     flex: 1;
   }
 
-  .upload-label {
-    cursor: pointer;
-  }
-
   .upload-bar {
     height: 3px;
     background: var(--border);
@@ -438,58 +411,6 @@
     font-weight: 500;
     color: rgba(255,255,255,0.9);
     text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-  }
-
-  /* Camera overlay */
-  .camera-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 100;
-    background: black;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .camera-overlay video {
-    flex: 1;
-    object-fit: cover;
-  }
-
-  .camera-controls {
-    display: flex;
-    align-items: center;
-    justify-content: space-around;
-    padding: 20px 24px 36px;
-    background: rgba(0,0,0,0.85);
-  }
-
-  .cam-btn {
-    border-radius: 50%;
-    border: none;
-    cursor: pointer;
-  }
-
-  .shutter {
-    width: 72px;
-    height: 72px;
-    background: white;
-    border: 4px solid var(--accent);
-    transition: transform 0.1s;
-  }
-
-  .shutter:active {
-    transform: scale(0.88);
-  }
-
-  .cancel {
-    width: 48px;
-    height: 48px;
-    background: rgba(255,255,255,0.12);
-    color: white;
-    font-size: 22px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
 
   /* Lightbox */
