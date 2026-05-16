@@ -429,46 +429,40 @@
 {/if}
 
 <div class="session-page">
-  <header>
-    <div class="container">
-      {#if session}
-        <div class="header-deco">
-          <div class="deco-line"></div>
-          <div class="deco-diamond"></div>
-          <div class="deco-line"></div>
-        </div>
-        <h1>Val & Isa</h1>
-        <p class="header-subtitle">A Great Gatsby Night</p>
-        <div class="stats">
-          <span>{photos.length} photo{photos.length !== 1 ? 's' : ''}</span>
-          <span class="dot">&#10022;</span>
-          <span>{guests.length} guest{guests.length !== 1 ? 's' : ''}</span>
-        </div>
-        {#if guest}
-          <p class="guest-badge"><strong>{guest.name}</strong></p>
+  <div class="sticky-top">
+    <header>
+      <div class="container">
+        {#if session}
+          <h1>Val & Isa</h1>
+          <div class="header-row">
+            <span class="stats">{photos.length} photo{photos.length !== 1 ? 's' : ''} &#10022; {guests.length} guest{guests.length !== 1 ? 's' : ''}</span>
+            {#if guest}
+              <span class="guest-badge">{guest.name}</span>
+            {/if}
+          </div>
+        {:else}
+          <div class="loading-header">
+            <div class="loader"></div>
+          </div>
         {/if}
-      {:else}
-        <div class="loading-header">
-          <div class="loader"></div>
-        </div>
-      {/if}
-    </div>
-  </header>
+      </div>
+    </header>
 
-  {#if guest}
-    <div class="actions container">
-      <button class="btn btn-primary" onclick={openNativeCamera}>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-        Capture
-      </button>
-      <button class="btn btn-secondary" onclick={openGallery}>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        Gallery
-      </button>
-    </div>
+    {#if guest}
+      <div class="actions container">
+        <button class="btn btn-primary" onclick={openNativeCamera}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          Capture
+        </button>
+        <button class="btn btn-secondary" onclick={openGallery}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Gallery
+        </button>
+      </div>
+    {/if}
 
     {#if uploading}
-      <div class="container">
+      <div class="container upload-status">
         <div class="upload-bar">
           <div class="upload-progress"></div>
         </div>
@@ -481,110 +475,95 @@
         <p class="upload-error">{uploadError}</p>
       </div>
     {/if}
-  {/if}
+  </div>
 
-  <div class="gallery container">
-    {#if photos.length === 0}
-      <div class="empty-gallery">
-        <p class="empty-icon">&#10022;</p>
-        <p>No photos yet</p>
-        <p class="hint">Be the first to capture a moment, old sport!</p>
-      </div>
-    {:else}
-      <div class="photo-grid">
-        {#each photos as photo, i (photo.id)}
-          <button class="photo-item" onclick={() => openLightbox(photo, i)}>
-            <img
-              src={getPhotoUrl(photo.storage_path)}
-              alt="Photo by {photo.guest?.name ?? 'guest'}"
-              loading="lazy"
-            />
-            <div class="photo-meta">
-              <span class="photo-author">{photo.guest?.name ?? ''}</span>
-            </div>
-          </button>
-        {/each}
-      </div>
-    {/if}
+  <div class="gallery-scroll">
+    <div class="gallery container">
+      {#if photos.length === 0}
+        <div class="empty-gallery">
+          <p class="empty-icon">&#10022;</p>
+          <p>No photos yet</p>
+          <p class="hint">Be the first to capture a moment, old sport!</p>
+        </div>
+      {:else}
+        <div class="photo-grid">
+          {#each photos as photo, i (photo.id)}
+            <button class="photo-item" onclick={() => openLightbox(photo, i)}>
+              <img
+                src={getPhotoUrl(photo.storage_path)}
+                alt="Photo by {photo.guest?.name ?? 'guest'}"
+                loading="lazy"
+              />
+              <div class="photo-meta">
+                <span class="photo-author">{photo.guest?.name ?? ''}</span>
+              </div>
+            </button>
+          {/each}
+        </div>
+      {/if}
+    </div>
   </div>
 </div>
 
 <style>
   .session-page {
-    min-height: 100dvh;
-    padding-bottom: 40px;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
     background:
       radial-gradient(ellipse at 50% 0%, rgba(201, 168, 76, 0.06) 0%, transparent 50%),
       var(--bg);
   }
 
+  .sticky-top {
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .sticky-top::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 20px;
+    background: linear-gradient(to bottom, var(--bg), transparent);
+    pointer-events: none;
+    z-index: 2;
+  }
+
   header {
-    padding: 40px 0 12px;
+    padding: 16px 0 8px;
     text-align: center;
-  }
-
-  .header-deco {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-
-  .header-deco .deco-line {
-    flex: 1;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--accent), transparent);
-  }
-
-  .header-deco .deco-diamond {
-    width: 6px;
-    height: 6px;
-    background: var(--accent);
-    transform: rotate(45deg);
   }
 
   header h1 {
     font-family: var(--font-display);
-    font-size: 32px;
+    font-size: 24px;
     font-weight: 800;
     color: var(--accent);
     letter-spacing: 1px;
   }
 
-  .header-subtitle {
-    font-family: var(--font-body);
-    font-size: 14px;
-    font-style: italic;
-    color: var(--text-muted);
-    letter-spacing: 1px;
-    margin-top: 2px;
-  }
-
-  .stats {
+  .header-row {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    margin-top: 10px;
+    gap: 12px;
+    margin-top: 4px;
+  }
+
+  .stats {
     color: var(--text-muted);
-    font-size: 14px;
+    font-size: 12px;
     letter-spacing: 0.5px;
   }
 
-  .dot {
-    color: var(--accent);
-    font-size: 8px;
-  }
-
   .guest-badge {
-    margin-top: 6px;
-    font-size: 13px;
-    color: var(--text-muted);
-  }
-
-  .guest-badge strong {
+    font-size: 12px;
     color: var(--accent);
     font-family: var(--font-display);
+    font-weight: 700;
   }
 
   .loading-header {
@@ -607,18 +586,21 @@
   .actions {
     display: flex;
     gap: 12px;
-    margin: 16px auto;
+    margin: 8px auto 10px;
   }
 
   .actions .btn {
     flex: 1;
   }
 
+  .upload-status {
+    padding-bottom: 8px;
+  }
+
   .upload-bar {
     height: 2px;
     background: var(--border-gold);
     overflow: hidden;
-    margin-bottom: 12px;
   }
 
   .upload-progress {
@@ -639,20 +621,24 @@
     font-size: 12px;
     color: var(--text-muted);
     font-style: italic;
-    margin-top: 2px;
-    margin-bottom: 8px;
+    margin-top: 4px;
   }
 
   .upload-error {
     text-align: center;
     font-size: 14px;
     color: #e57373;
-    padding: 8px;
-    margin-bottom: 8px;
+    padding: 8px 8px 0;
+  }
+
+  .gallery-scroll {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .gallery {
-    margin-top: 8px;
+    padding-top: 3px;
   }
 
   .empty-gallery {
