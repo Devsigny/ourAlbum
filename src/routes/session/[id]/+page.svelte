@@ -203,26 +203,32 @@
   let touchStartY = 0;
   let touchDeltaX = $state(0);
   let swiping = $state(false);
+  let slideDir = $state<'left' | 'right' | null>(null);
   let lightboxEl = $state<HTMLDivElement | null>(null);
+  let deleting = $state(false);
 
   function openLightbox(photo: Photo, idx: number) {
     lightboxPhoto = photo;
     lightboxIdx = idx;
     touchDeltaX = 0;
+    slideDir = null;
     requestAnimationFrame(() => lightboxEl?.focus());
   }
 
   function closeLightbox() {
     lightboxPhoto = null;
     touchDeltaX = 0;
+    slideDir = null;
   }
 
   function lightboxNav(dir: -1 | 1) {
     const newIdx = lightboxIdx + dir;
     if (newIdx >= 0 && newIdx < photos.length) {
+      slideDir = dir === 1 ? 'left' : 'right';
       lightboxIdx = newIdx;
       lightboxPhoto = photos[newIdx];
       touchDeltaX = 0;
+      setTimeout(() => { slideDir = null; }, 300);
     }
   }
 
@@ -264,6 +270,33 @@
       closeLightbox();
     }
     touchDeltaX = 0;
+  }
+
+  function isOwnPhoto(photo: Photo): boolean {
+    return !!guest && photo.guest_id === guest.id;
+  }
+
+  async function deletePhoto() {
+    if (!lightboxPhoto || !isOwnPhoto(lightboxPhoto)) return;
+    deleting = true;
+
+    const photo = lightboxPhoto;
+    const idx = lightboxIdx;
+
+    await supabase.storage.from('photos').remove([photo.storage_path]);
+    await supabase.from('photos').delete().eq('id', photo.id);
+
+    knownPhotoIds.delete(photo.id);
+    photos = photos.filter(p => p.id !== photo.id);
+
+    if (photos.length === 0) {
+      closeLightbox();
+    } else {
+      const newIdx = Math.min(idx, photos.length - 1);
+      lightboxIdx = newIdx;
+      lightboxPhoto = photos[newIdx];
+    }
+    deleting = false;
   }
 
   let pollInterval: ReturnType<typeof setInterval> | null = null;
@@ -339,7 +372,12 @@
     ontouchmove={handleTouchMove}
     ontouchend={handleTouchEnd}
   >
-    <div class="lb-track" style="transform: translateX({touchDeltaX}px); transition: {swiping ? 'none' : 'transform 0.25s ease'}">
+    <div
+      class="lb-track"
+      class:slide-left={slideDir === 'left'}
+      class:slide-right={slideDir === 'right'}
+      style="transform: translateX({touchDeltaX}px); {swiping ? '' : touchDeltaX === 0 ? '' : 'transition: transform 0.25s ease;'}"
+    >
       <img src={getPhotoUrl(lightboxPhoto.storage_path)} alt="" draggable="false" />
     </div>
 
@@ -349,6 +387,12 @@
       <span class="lb-name">{lightboxPhoto.guest?.name ?? 'Unknown'}</span>
       <span class="lb-time">{new Date(lightboxPhoto.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
     </div>
+
+    {#if isOwnPhoto(lightboxPhoto)}
+      <button class="lb-delete" onclick={(e) => { e.stopPropagation(); deletePhoto(); }} disabled={deleting} aria-label="Delete photo">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+    {/if}
 
     <button class="lb-close" onclick={closeLightbox} aria-label="Close">&#10005;</button>
   </div>
@@ -624,6 +668,8 @@
     padding: 0;
     border: none;
     cursor: pointer;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
   }
 
   .photo-item img {
@@ -681,6 +727,24 @@
     will-change: transform;
   }
 
+  .lb-track.slide-left {
+    animation: slideFromRight 0.3s ease;
+  }
+
+  .lb-track.slide-right {
+    animation: slideFromLeft 0.3s ease;
+  }
+
+  @keyframes slideFromRight {
+    from { transform: translateX(40%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  @keyframes slideFromLeft {
+    from { transform: translateX(-40%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
   .lb-track img {
     max-width: 92vw;
     max-height: 75vh;
@@ -734,5 +798,27 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .lb-delete {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: rgba(229, 115, 115, 0.15);
+    border: 1px solid rgba(229, 115, 115, 0.3);
+    color: #e57373;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .lb-delete:disabled {
+    opacity: 0.4;
   }
 </style>
